@@ -2,89 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RiskTwin India - Government-Grade Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* RiskTwin India - Premium Design System */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    /* Core Navy Palette */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Rich Dark Base - Warm Charcoal */
+    --background: 220 16% 7%;
+    --foreground: 60 9% 94%;
     
-    /* Card surfaces with glass effect */
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    /* Card surfaces - Elevated warm grays */
+    --card: 220 16% 10%;
+    --card-foreground: 60 9% 94%;
     
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 16% 12%;
+    --popover-foreground: 60 9% 94%;
     
-    /* Brand - Authoritative Cyan */
-    --primary: 195 100% 50%;
-    --primary-foreground: 222 47% 6%;
+    /* Primary - Vibrant Amber/Gold */
+    --primary: 38 92% 50%;
+    --primary-foreground: 220 16% 7%;
     
-    /* Secondary - Muted Navy */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary - Cool Slate */
+    --secondary: 220 14% 15%;
+    --secondary-foreground: 60 9% 94%;
     
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 55%;
+    /* Accent - Electric Teal */
+    --accent: 168 76% 42%;
+    --accent-foreground: 220 16% 7%;
     
-    --accent: 195 80% 40%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 220 14% 18%;
+    --muted-foreground: 220 14% 55%;
     
-    /* Risk Colors */
-    --risk-low: 142 76% 36%;
-    --risk-medium: 45 93% 47%;
-    --risk-high: 0 84% 60%;
-    --risk-critical: 0 84% 45%;
+    /* Risk Colors - Refined & Distinct */
+    --risk-low: 152 69% 45%;
+    --risk-medium: 38 92% 50%;
+    --risk-high: 4 90% 58%;
+    --risk-critical: 340 82% 52%;
     
-    /* Data Visualization */
-    --data-cyan: 195 100% 50%;
-    --data-blue: 210 100% 60%;
-    --data-purple: 270 80% 60%;
-    --data-green: 142 76% 46%;
-    --data-orange: 25 95% 53%;
+    /* Data Visualization - Harmonious Palette */
+    --data-teal: 168 76% 42%;
+    --data-amber: 38 92% 50%;
+    --data-rose: 4 90% 58%;
+    --data-violet: 262 83% 58%;
+    --data-emerald: 152 69% 45%;
     
     /* Alert Colors */
-    --alert-info: 195 100% 50%;
-    --alert-warning: 45 93% 47%;
-    --alert-danger: 0 84% 60%;
-    --alert-severe: 280 80% 55%;
+    --alert-info: 201 96% 32%;
+    --alert-warning: 38 92% 50%;
+    --alert-danger: 4 90% 58%;
+    --alert-severe: 340 82% 52%;
     
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 60 9% 94%;
     
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 195 100% 50%;
+    --border: 220 14% 18%;
+    --input: 220 14% 18%;
+    --ring: 168 76% 42%;
     
-    --radius: 0.75rem;
+    --radius: 0.875rem;
     
     /* Glass Effects */
-    --glass-bg: 222 47% 8% / 0.8;
-    --glass-border: 217 33% 25% / 0.5;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(195 100% 50%), hsl(210 100% 60%));
-    --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(25 95% 53%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(160 84% 39%));
-    --gradient-card: linear-gradient(180deg, hsl(222 47% 10%), hsl(222 47% 6%));
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 4%), hsl(222 47% 8%), hsl(217 33% 12%));
+    --glass-bg: 220 16% 10% / 0.85;
+    --glass-border: 220 14% 25% / 0.4;
     
     /* Shadows */
-    --shadow-glow-cyan: 0 0 40px hsl(195 100% 50% / 0.15);
-    --shadow-glow-danger: 0 0 40px hsl(0 84% 60% / 0.2);
-    --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.3);
-    --shadow-elevated: 0 8px 32px hsl(0 0% 0% / 0.4);
+    --shadow-glow-accent: 0 0 40px hsl(168 76% 42% / 0.2);
+    --shadow-glow-danger: 0 0 40px hsl(4 90% 58% / 0.2);
+    --shadow-glow-primary: 0 0 40px hsl(38 92% 50% / 0.2);
     
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 195 100% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 195 100% 50%;
+    --sidebar-background: 220 16% 7%;
+    --sidebar-foreground: 60 9% 94%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 220 16% 7%;
+    --sidebar-accent: 220 14% 15%;
+    --sidebar-accent-foreground: 60 9% 94%;
+    --sidebar-border: 220 14% 18%;
+    --sidebar-ring: 168 76% 42%;
   }
 }
 
@@ -95,54 +88,61 @@
   
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  
+  /* Mono font for data */
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
 @layer components {
-  /* Glass Card */
+  /* Glass Card - Premium */
   .glass-card {
-    @apply rounded-xl border border-white/10 backdrop-blur-xl;
-    background: linear-gradient(180deg, 
-      hsl(222 47% 12% / 0.9), 
-      hsl(222 47% 8% / 0.95)
+    @apply rounded-2xl border border-white/[0.08] backdrop-blur-2xl;
+    background: linear-gradient(
+      180deg, 
+      hsl(220 16% 13% / 0.95), 
+      hsl(220 16% 9% / 0.98)
     );
     box-shadow: 
-      0 4px 24px hsl(0 0% 0% / 0.3),
-      inset 0 1px 0 hsl(217 33% 30% / 0.2);
+      0 8px 32px hsl(0 0% 0% / 0.4),
+      0 0 0 1px hsl(220 14% 20% / 0.3),
+      inset 0 1px 0 hsl(220 14% 30% / 0.15);
   }
   
   /* Data Card */
   .data-card {
-    @apply glass-card p-4 transition-all duration-300;
+    @apply glass-card p-5 transition-all duration-300;
   }
   
   .data-card:hover {
-    @apply border-primary/30;
-    box-shadow: var(--shadow-glow-cyan);
+    @apply border-accent/30;
+    box-shadow: var(--shadow-glow-accent);
   }
   
   /* Risk Indicators */
   .risk-low {
-    @apply text-green-400 bg-green-500/10 border-green-500/30;
+    @apply text-emerald-400 bg-emerald-500/10 border-emerald-500/30;
   }
   
   .risk-medium {
-    @apply text-yellow-400 bg-yellow-500/10 border-yellow-500/30;
+    @apply text-amber-400 bg-amber-500/10 border-amber-500/30;
   }
   
   .risk-high {
-    @apply text-orange-400 bg-orange-500/10 border-orange-500/30;
+    @apply text-rose-400 bg-rose-500/10 border-rose-500/30;
   }
   
   .risk-critical {
-    @apply text-red-400 bg-red-500/10 border-red-500/30;
+    @apply text-pink-400 bg-pink-500/10 border-pink-500/30;
   }
   
-  /* Stat Value */
+  /* Stat Value - Gradient Text */
   .stat-value {
-    @apply text-3xl font-bold tracking-tight;
-    background: var(--gradient-primary);
+    @apply text-3xl font-extrabold tracking-tight;
+    background: linear-gradient(135deg, hsl(38 92% 50%), hsl(168 76% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -150,12 +150,20 @@
   
   /* Progress Bar */
   .risk-progress {
-    @apply h-2 rounded-full overflow-hidden;
-    background: hsl(217 33% 15%);
+    @apply h-2.5 rounded-full overflow-hidden;
+    background: hsl(220 14% 15%);
   }
   
   .risk-progress-bar {
     @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+  
+  /* Hero Gradient */
+  .bg-gradient-hero {
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(168 76% 42% / 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 60%, hsl(38 92% 50% / 0.05), transparent),
+      linear-gradient(180deg, hsl(220 16% 5%), hsl(220 16% 8%));
   }
   
   /* Pulse Animation for Alerts */
@@ -168,11 +176,21 @@
     50% { opacity: 0.6; }
   }
   
+  /* Glow Animation */
+  @keyframes pulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), 0 4px 12px rgba(0,0,0,0.4); 
+    }
+    50% { 
+      box-shadow: 0 0 35px rgba(245, 158, 11, 0.7), 0 4px 12px rgba(0,0,0,0.4); 
+    }
+  }
+  
   /* Map Glow */
   .map-glow {
     box-shadow: 
-      0 0 60px hsl(195 100% 50% / 0.1),
-      inset 0 0 60px hsl(195 100% 50% / 0.05);
+      0 0 60px hsl(168 76% 42% / 0.08),
+      inset 0 0 60px hsl(168 76% 42% / 0.03);
   }
   
   /* Smooth Fade In */
@@ -195,25 +213,13 @@
     to { opacity: 1; transform: translateX(0); }
   }
   
-  /* Analyzing Animation */
-  .analyzing {
-    animation: analyzing 1.5s ease-in-out infinite;
-  }
-  
-  @keyframes analyzing {
-    0% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.5; }
-  }
-  
   /* Heatmap Gradient */
   .heatmap-gradient {
     background: linear-gradient(
       90deg,
-      hsl(142 76% 36%) 0%,
-      hsl(45 93% 47%) 33%,
-      hsl(25 95% 53%) 66%,
-      hsl(0 84% 60%) 100%
+      hsl(152 69% 45%) 0%,
+      hsl(38 92% 50%) 50%,
+      hsl(4 90% 58%) 100%
     );
   }
   
@@ -221,40 +227,90 @@
   .header-gradient {
     background: linear-gradient(
       180deg,
-      hsl(222 47% 8%) 0%,
-      hsl(222 47% 6% / 0.95) 100%
+      hsl(220 16% 9%) 0%,
+      hsl(220 16% 7% / 0.98) 100%
     );
+    backdrop-filter: blur(12px);
   }
   
   /* Badge Styles */
   .badge-risk-low {
-    @apply bg-green-500/20 text-green-400 border border-green-500/30;
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/25;
   }
   
   .badge-risk-medium {
-    @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/25;
   }
   
   .badge-risk-high {
-    @apply bg-red-500/20 text-red-400 border border-red-500/30;
+    @apply bg-rose-500/15 text-rose-400 border border-rose-500/25;
   }
   
   /* Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   
   ::-webkit-scrollbar-track {
-    background: hsl(222 47% 6%);
+    background: hsl(220 16% 7%);
   }
   
   ::-webkit-scrollbar-thumb {
-    background: hsl(217 33% 20%);
-    border-radius: 4px;
+    background: hsl(220 14% 22%);
+    border-radius: 3px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(217 33% 30%);
+    background: hsl(220 14% 28%);
+  }
+  
+  /* Leaflet Custom Styles */
+  .leaflet-container {
+    background: hsl(220 16% 7%) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+  
+  .leaflet-popup-content-wrapper {
+    background: hsl(220 16% 12%) !important;
+    color: hsl(60 9% 94%) !important;
+    border-radius: 12px !important;
+    border: 1px solid hsl(220 14% 20%) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+  }
+  
+  .leaflet-popup-tip {
+    background: hsl(220 16% 12%) !important;
+    border: 1px solid hsl(220 14% 20%) !important;
+  }
+  
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
+  }
+  
+  .leaflet-control-zoom a {
+    background: hsl(220 16% 12%) !important;
+    color: hsl(60 9% 94%) !important;
+    border: none !important;
+    border-bottom: 1px solid hsl(220 14% 18%) !important;
+  }
+  
+  .leaflet-control-zoom a:hover {
+    background: hsl(220 14% 18%) !important;
+    color: hsl(168 76% 50%) !important;
+  }
+  
+  .leaflet-control-attribution {
+    background: hsl(220 16% 7% / 0.8) !important;
+    color: hsl(220 14% 45%) !important;
+    font-size: 10px !important;
+    padding: 2px 8px !important;
+  }
+  
+  .leaflet-control-attribution a {
+    color: hsl(168 76% 50%) !important;
   }
 }
