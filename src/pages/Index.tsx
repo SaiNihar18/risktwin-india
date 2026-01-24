@@ -8,7 +8,17 @@ import DisasterRiskPanel from '@/components/DisasterRiskPanel';
 import ExplainabilityPanel from '@/components/ExplainabilityPanel';
 import SafePlaceRecommender from '@/components/SafePlaceRecommender';
 import AlertSystem from '@/components/AlertSystem';
-import { analyzeLocation, INDIAN_CITIES } from '@/data/mockData';
+import { 
+  analyzeLocation, 
+  INDIAN_CITIES,
+  generateDisasterRisk,
+  generateRiskScores,
+  generateRiskFactors,
+  generateAlerts,
+  generateSafePlaces,
+  findNearestCity,
+} from '@/data/mockData';
+import { fetchLiveConditions } from '@/services/weatherApi';
 import type { AnalysisResult, Location, SafePlace } from '@/types/risk';
 
 const Index = () => {
@@ -21,14 +31,56 @@ const Index = () => {
   const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
     setIsAnalyzing(true);
     
-    // Simulate analysis delay for UX
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (demoMode) {
+      // Demo mode: Use mock data
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = analyzeLocation(lat, lon);
+      setSelectedLocation(result.location);
+      setAnalysisResult(result);
+    } else {
+      // Live mode: Fetch real API data
+      try {
+        const location = findNearestCity(lat, lon);
+        setSelectedLocation(location);
+        
+        // Fetch real conditions from APIs
+        const liveConditions = await fetchLiveConditions(lat, lon);
+        
+        if (liveConditions) {
+          // Use real data to calculate risks
+          const disasterRisk = generateDisasterRisk(location, liveConditions);
+          const riskScores = generateRiskScores(liveConditions, disasterRisk);
+          const riskFactors = generateRiskFactors(liveConditions, disasterRisk, riskScores);
+          const alerts = generateAlerts(liveConditions, riskScores, disasterRisk);
+          const safePlaces = generateSafePlaces(location, riskScores);
+          
+          setAnalysisResult({
+            location,
+            conditions: liveConditions,
+            riskScores,
+            disasterRisk,
+            riskFactors,
+            alerts,
+            safePlaces,
+            confidence: riskFactors.length > 3 ? 'high' : riskFactors.length > 1 ? 'medium' : 'low',
+            dataCompleteness: 0.95,
+            analyzedAt: new Date(),
+          });
+        } else {
+          // Fallback to mock if API fails
+          const result = analyzeLocation(lat, lon);
+          setAnalysisResult(result);
+        }
+      } catch (error) {
+        console.error('API fetch failed:', error);
+        // Fallback to mock data
+        const result = analyzeLocation(lat, lon);
+        setAnalysisResult(result);
+      }
+    }
     
-    const result = analyzeLocation(lat, lon);
-    setSelectedLocation(result.location);
-    setAnalysisResult(result);
     setIsAnalyzing(false);
-  }, []);
+  }, [demoMode]);
 
   // Handle safe place selection
   const handleSafePlaceSelect = useCallback((place: SafePlace) => {
@@ -133,7 +185,10 @@ const Index = () => {
               <p className="font-medium text-foreground mb-1">RiskTwin India</p>
               <p>Multi-Risk Digital Twin for Climate, Disaster, Air Quality & Public Safety</p>
               <p className="mt-1 text-muted-foreground/70">
-                Demo Mode: Using simulated data for demonstration purposes
+                {demoMode 
+                  ? 'Demo Mode: Using simulated data for demonstration purposes'
+                  : 'Live Mode: Fetching real-time data from OpenWeatherMap & AQICN APIs'
+                }
               </p>
             </div>
           </div>

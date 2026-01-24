@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Location, MapLayer } from '@/types/risk';
 import { INDIAN_CITIES } from '@/data/mockData';
+import { useTheme } from '@/hooks/useTheme';
 
 // Fix for default marker icons in Leaflet with Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -124,6 +125,7 @@ const MapView = ({
   onLocationSelect, 
   isAnalyzing,
 }: MapViewProps) => {
+  const { theme } = useTheme();
   const [layers, setLayers] = useState<MapLayer[]>([
     { id: 'overall', name: 'Risk Zones', enabled: true, type: 'heatmap' },
     { id: 'cities', name: 'Major Cities', enabled: true, type: 'markers' },
@@ -151,6 +153,11 @@ const MapView = ({
   const showCities = layers.find(l => l.id === 'cities')?.enabled;
   const showSatellite = layers.find(l => l.id === 'satellite')?.enabled;
   const showRiskZones = layers.find(l => l.id === 'overall')?.enabled;
+
+  // Theme-aware tile URLs
+  const lightTileUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const darkTileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
 
   return (
     <div className="glass-card overflow-hidden h-full flex flex-col">
@@ -201,7 +208,7 @@ const MapView = ({
           zoom={5}
           scrollWheelZoom={true}
           className="h-full w-full z-0"
-          style={{ background: '#0D1117' }}
+          style={{ background: theme === 'dark' ? '#0D1117' : '#f5f5f5' }}
         >
           {/* Map Tiles */}
           {showSatellite ? (
@@ -211,8 +218,9 @@ const MapView = ({
             />
           ) : (
             <TileLayer
+              key={theme}
               attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              url={tileUrl}
             />
           )}
           
