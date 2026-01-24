@@ -21,15 +21,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const root = document.documentElement;
-    
+    // Tailwind uses the presence of the `dark` class on the root element.
+    // Only toggle `dark` class to avoid potential conflicts with CSS that expects
+    // variables defined in `:root` and `.dark`.
     if (theme === 'dark') {
       root.classList.add('dark');
-      root.classList.remove('light');
     } else {
-      root.classList.add('light');
       root.classList.remove('dark');
     }
-    
+
     localStorage.setItem('risktwin-theme', theme);
   }, [theme]);
 

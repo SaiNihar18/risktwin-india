@@ -4,12 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 
-interface HeaderProps {
-  demoMode: boolean;
-  onDemoModeChange: (enabled: boolean) => void;
-}
-
-const Header = ({ demoMode, onDemoModeChange }: HeaderProps) => {
+const Header = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -65,26 +60,7 @@ const Header = ({ demoMode, onDemoModeChange }: HeaderProps) => {
               )}
             </Button>
 
-            {/* Demo Mode Toggle */}
-            <div className="flex items-center gap-3 bg-secondary/50 rounded-xl px-4 py-2 border border-border/50">
-              <Label 
-                htmlFor="demo-mode" 
-                className="text-sm font-medium cursor-pointer"
-              >
-                Demo Mode
-              </Label>
-              <Switch
-                id="demo-mode"
-                checked={demoMode}
-                onCheckedChange={onDemoModeChange}
-                className="data-[state=checked]:bg-primary"
-              />
-              {demoMode && (
-                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
-                  ON
-                </span>
-              )}
-            </div>
+            {/* Removed demo mode UI - application now runs in Live Mode */}
           </div>
         </div>
       </div>

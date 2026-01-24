@@ -30,7 +30,8 @@ describe('ThemeProvider', () => {
     // click to toggle
     fireEvent.click(screen.getByTestId('theme-toggle'));
 
-    expect(document.documentElement.classList.contains('light')).toBe(true);
+    // We only toggle the `dark` class (Tailwind uses presence of `dark`).
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(localStorage.getItem('risktwin-theme')).toBe('light');
   });
 });

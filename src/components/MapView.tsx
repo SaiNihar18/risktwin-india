@@ -273,6 +273,15 @@ const MapView = ({
             </Marker>
           )}
         </MapContainer>
+        {/* Recenter pulse animation shown briefly when map recenters */}
+        {shouldRecenter && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+            <div className="flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-accent/20 animate-ping" />
+              <div className="absolute w-6 h-6 rounded-full bg-accent shadow-lg" />
+            </div>
+          </div>
+        )}
         
         {/* Analysis Overlay */}
         {isAnalyzing && (

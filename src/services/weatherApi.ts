@@ -5,9 +5,11 @@ import { getWindCompass } from '@/data/mockData';
 const OPENWEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
 const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
 
-// AQICN (World Air Quality Index) - public token
-const AQICN_TOKEN = 'demo';
-const AQICN_BASE_URL = 'https://api.waqi.info';
+// We'll use OpenWeatherMap's Air Pollution API for AQI (same account key)
+const OPENWEATHER_AIR_URL = 'https://api.openweathermap.org/data/2.5/air_pollution';
+
+// FWI (Fire Weather Index) forecast endpoint (OpenWeather has an FWI forecast)
+const OPENWEATHER_FWI_URL = 'https://api.openweathermap.org/data/2.5/fwi/forecast';
 
 interface OpenWeatherResponse {
   main: {
@@ -97,78 +99,90 @@ export const fetchWeatherData = async (lat: number, lon: number): Promise<Partia
 };
 
 // Fetch AQI data from AQICN
-export const fetchAQIData = async (lat: number, lon: number): Promise<{ aqi: number; pm25: number }> => {
+// Fetch air pollution from OpenWeatherMap (air_pollution)
+export const fetchAirPollution = async (lat: number, lon: number): Promise<{ aqi: number; pm25: number }> => {
   try {
-    console.log('[AQI API] Fetching data for:', lat, lon);
-    
-    const response = await fetch(
-      `${AQICN_BASE_URL}/feed/geo:${lat};${lon}/?token=${AQICN_TOKEN}`
-    );
-    
-    if (!response.ok) {
-      console.warn('[AQI API] Response not OK:', response.status);
-      throw new Error(`AQI API request failed: ${response.status}`);
+    console.log('[AirPollution] Fetching data for:', lat, lon);
+
+    const resp = await fetch(`${OPENWEATHER_AIR_URL}?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`);
+    if (!resp.ok) {
+      console.warn('[AirPollution] Response not OK:', resp.status);
+      throw new Error(`Air pollution API failed: ${resp.status}`);
     }
-    
-    const data: AQICNResponse = await response.json();
-    
-    if (data.status !== 'ok' || !data.data) {
-      console.warn('[AQI API] Data status not OK or missing data');
-      // Return reasonable defaults for Indian cities
-      return { aqi: 85, pm25: 45 };
-    }
-    
-    console.log('[AQI API] Success:', data.data.aqi);
-    
-    return {
-      aqi: typeof data.data.aqi === 'number' ? data.data.aqi : 85,
-      pm25: data.data.iaqi?.pm25?.v || Math.round((data.data.aqi || 85) * 0.5),
-    };
+
+    const data = await resp.json();
+    // Expected structure: { coord: [...], list: [ { main: { aqi }, components: { pm2_5 } } ] }
+    const aqi = data?.list?.[0]?.main?.aqi ?? 2;
+    const pm25 = data?.list?.[0]?.components?.pm2_5 ?? Math.round((aqi || 2) * 12);
+
+    return { aqi, pm25 };
   } catch (error) {
-    console.error('[AQI API] Failed:', error);
-    // Return reasonable defaults instead of zeros
+    console.error('[AirPollution] Failed:', error);
     return { aqi: 85, pm25: 45 };
+  }
+};
+
+// Fetch FWI (fire weather index) forecast
+export const fetchFWIForecast = async (lat: number, lon: number): Promise<{ fwi?: number; danger?: string }[]> => {
+  try {
+    console.log('[FWI] Fetching FWI forecast for:', lat, lon);
+    const resp = await fetch(`${OPENWEATHER_FWI_URL}?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`);
+    if (!resp.ok) {
+      console.warn('[FWI] Response not OK:', resp.status);
+      throw new Error(`FWI API failed: ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    // Expect 'list' array with 'main.fwi' and optional danger_rating
+    const forecast = (data?.list || []).map((it: any) => ({
+      fwi: it?.main?.fwi,
+      danger: it?.danger_rating?.description || undefined,
+    }));
+
+    return forecast;
+  } catch (error) {
+    console.error('[FWI] Failed:', error);
+    return [];
   }
 };
 
 // Combined function to fetch all live data
 export const fetchLiveConditions = async (lat: number, lon: number): Promise<LiveConditions | null> => {
   console.log('[Live Data] Fetching conditions for:', lat.toFixed(4), lon.toFixed(4));
-  
-  try {
-    const [weatherData, aqiData] = await Promise.all([
-      fetchWeatherData(lat, lon),
-      fetchAQIData(lat, lon),
-    ]);
-    
-    // If we got weather data, combine with AQI
-    if (weatherData.temperature !== undefined) {
-      const conditions: LiveConditions = {
-        temperature: weatherData.temperature,
-        humidity: weatherData.humidity || 50,
-        windSpeed: weatherData.windSpeed || 10,
-        windDirection: weatherData.windDirection || 0,
-        windCompass: weatherData.windCompass || 'N',
-        rainfall: weatherData.rainfall || 0,
-        rainProbability: weatherData.rainProbability || 0,
-        aqi: aqiData.aqi,
-        pm25: aqiData.pm25,
-        lastUpdated: new Date(),
-      };
-      
-      console.log('[Live Data] Combined result:', {
-        temp: conditions.temperature,
-        humidity: conditions.humidity,
-        aqi: conditions.aqi,
-      });
-      
-      return conditions;
-    }
-    
-    console.warn('[Live Data] No weather data received');
-    return null;
-  } catch (error) {
-    console.error('[Live Data] Failed to fetch conditions:', error);
-    return null;
+  const [weatherData, aqiData, fwiForecast] = await Promise.all([
+    fetchWeatherData(lat, lon),
+    fetchAirPollution(lat, lon),
+    fetchFWIForecast(lat, lon),
+  ]);
+
+  // If we got weather data, combine with AQI
+  if (weatherData.temperature !== undefined) {
+    const conditions: LiveConditions = {
+      temperature: weatherData.temperature,
+      humidity: weatherData.humidity || 50,
+      windSpeed: weatherData.windSpeed || 10,
+      windDirection: weatherData.windDirection || 0,
+      windCompass: weatherData.windCompass || 'N',
+      rainfall: weatherData.rainfall || 0,
+      rainProbability: weatherData.rainProbability || 0,
+      aqi: aqiData.aqi,
+      pm25: aqiData.pm25,
+      lastUpdated: new Date(),
+      // Use the first available FWI forecast entry as an indicator
+      wildfireFwi: fwiForecast?.[0]?.fwi,
+      wildfireDanger: fwiForecast?.[0]?.danger,
+    };
+
+    console.log('[Live Data] Combined result:', {
+      temp: conditions.temperature,
+      humidity: conditions.humidity,
+      aqi: conditions.aqi,
+    });
+
+    return conditions;
   }
+
+  console.warn('[Live Data] No weather data received');
+  // If upstream APIs returned non-ok they will have thrown - let the caller handle it
+  return null;
 };

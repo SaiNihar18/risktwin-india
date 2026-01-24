@@ -169,9 +169,20 @@ export const generateDisasterRisk = (location: Location, conditions: LiveConditi
     ? 0.4 + conditions.rainfall * 0.01 
     : 0.1 + Math.random() * 0.2;
   
-  const wildfire = conditions.humidity < 40 && conditions.temperature > 35 
+  let wildfire = conditions.humidity < 40 && conditions.temperature > 35 
     ? 0.4 + Math.random() * 0.3 
     : 0.1 + Math.random() * 0.2;
+  // If FWI (Fire Weather Index) provided from live APIs, factor it in
+  if (conditions.wildfireFwi !== undefined && !isNaN(Number(conditions.wildfireFwi))) {
+    const fwi = Number(conditions.wildfireFwi);
+    const fwiScore = Math.min(1, fwi / 100); // normalize
+    // Blend FWI into wildfire score (give it significant weight)
+    const blended = Math.min(1, Math.round((wildfire * 0.5 + fwiScore * 0.5) * 100) / 100);
+    // use the blended score if it's higher
+    if (blended > wildfire) {
+      wildfire = blended;
+    }
+  }
   
   const cyclone = isCoastal 
     ? 0.3 + Math.random() * 0.4 

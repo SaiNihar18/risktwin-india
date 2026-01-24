@@ -19,6 +19,9 @@ export interface LiveConditions {
   aqi: number;
   pm25: number;
   lastUpdated: Date;
+  // Optional wildfire indices from FWI forecast
+  wildfireFwi?: number;
+  wildfireDanger?: string;
 }
 
 // Risk Scores (0-1)
