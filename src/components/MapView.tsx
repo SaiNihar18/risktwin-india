@@ -30,7 +30,7 @@ const createCustomIcon = (color: string, size: number = 12) => {
       height: ${size}px; 
       background: ${color}; 
       border-radius: 50%; 
-      border: 2px solid rgba(255,255,255,0.8);
+      border: 2px solid rgba(255,255,255,0.9);
       box-shadow: 0 0 12px ${color}80, 0 2px 8px rgba(0,0,0,0.3);
     "></div>`,
     iconSize: [size, size],
@@ -42,17 +42,17 @@ const selectedIcon = L.divIcon({
   className: 'selected-marker',
   html: `<div class="selected-marker-inner">
     <div style="
-      width: 20px; 
-      height: 20px; 
-      background: linear-gradient(135deg, #F59E0B, #EF4444); 
+      width: 22px; 
+      height: 22px; 
+      background: linear-gradient(135deg, #3B82F6, #14B8A6); 
       border-radius: 50%; 
       border: 3px solid white;
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 0 24px rgba(59, 130, 246, 0.6), 0 4px 12px rgba(0,0,0,0.4);
       animation: pulse 2s infinite;
     "></div>
   </div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
 });
 
 const cityIcon = createCustomIcon('#10B981', 10);
@@ -96,9 +96,9 @@ const RiskZones = ({ location, enabled }: { location: Location | null; enabled: 
   if (!location || !enabled) return null;
   
   const zones = [
-    { radius: 50000, color: '#22C55E', opacity: 0.1 },
-    { radius: 30000, color: '#F59E0B', opacity: 0.15 },
-    { radius: 15000, color: '#EF4444', opacity: 0.2 },
+    { radius: 50000, color: '#22C55E', opacity: 0.08 },
+    { radius: 30000, color: '#F59E0B', opacity: 0.12 },
+    { radius: 15000, color: '#EF4444', opacity: 0.16 },
   ];
   
   return (
@@ -154,7 +154,7 @@ const MapView = ({
   const showSatellite = layers.find(l => l.id === 'satellite')?.enabled;
   const showRiskZones = layers.find(l => l.id === 'overall')?.enabled;
 
-  // Use OpenStreetMap standard tiles for both light and dark mode (like reference image)
+  // Always use OpenStreetMap standard tiles (bright/white) for both modes
   const osmTileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
@@ -162,11 +162,11 @@ const MapView = ({
       {/* Map Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/50 flex items-center justify-center">
-            <Target className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
+            <Target className="w-5 h-5 text-accent-foreground" />
           </div>
           <div>
-            <h2 className="font-bold text-sm">India Risk Map</h2>
+            <h2 className="font-bold text-sm text-foreground">India Risk Map</h2>
             {selectedLocation && (
               <p className="text-xs text-muted-foreground">
                 {selectedLocation.city}, {selectedLocation.state}
@@ -179,7 +179,7 @@ const MapView = ({
           {/* Layer Control */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 bg-secondary/50">
+              <Button variant="outline" size="sm" className="gap-2 bg-secondary/50 border-border">
                 <Layers className="w-4 h-4" />
                 <span className="hidden sm:inline">Layers</span>
               </Button>
@@ -206,9 +206,9 @@ const MapView = ({
           zoom={5}
           scrollWheelZoom={true}
           className="h-full w-full z-0"
-          style={{ background: theme === 'dark' ? '#0D1117' : '#f5f5f5' }}
+          style={{ background: '#f5f5f5' }}
         >
-          {/* Map Tiles */}
+          {/* Map Tiles - Always use OSM standard (bright) */}
           {showSatellite ? (
             <TileLayer
               attribution='&copy; Esri'
@@ -235,12 +235,13 @@ const MapView = ({
           {/* Risk Zones */}
           <RiskZones location={selectedLocation} enabled={showRiskZones ?? false} />
           
-          {/* City Markers */}
-          {showCities && INDIAN_CITIES.map((city) => {
+          {/* City Markers - Use unique key with index fallback */}
+          {showCities && INDIAN_CITIES.map((city, index) => {
             const isSelected = selectedLocation?.city === city.city;
+            const uniqueKey = `${city.city}-${city.state}-${index}`;
             return (
               <Marker
-                key={city.city}
+                key={uniqueKey}
                 position={[city.lat, city.lon]}
                 icon={isSelected ? selectedIcon : cityIcon}
                 eventHandlers={{
@@ -252,8 +253,8 @@ const MapView = ({
                 }}
               >
                 <Popup className="custom-popup">
-                  <div className="font-semibold">{city.city}</div>
-                  <div className="text-xs text-gray-500">{city.state}</div>
+                  <div className="font-semibold text-foreground">{city.city}</div>
+                  <div className="text-xs text-muted-foreground">{city.state}</div>
                 </Popup>
               </Marker>
             );
@@ -266,8 +267,8 @@ const MapView = ({
               icon={selectedIcon}
             >
               <Popup>
-                <div className="font-semibold">{selectedLocation.city}</div>
-                <div className="text-xs text-gray-500">{selectedLocation.state}</div>
+                <div className="font-semibold text-foreground">{selectedLocation.city}</div>
+                <div className="text-xs text-muted-foreground">{selectedLocation.state}</div>
               </Popup>
             </Marker>
           )}

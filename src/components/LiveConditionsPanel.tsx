@@ -29,14 +29,14 @@ const ConditionCard = ({ icon, label, value, unit, subValue, status = 'good' }: 
   const statusColors = {
     good: 'text-risk-low',
     moderate: 'text-risk-medium',
-    poor: 'text-data-orange',
-    severe: 'text-risk-high',
+    poor: 'text-risk-high',
+    severe: 'text-risk-critical',
   };
 
   return (
-    <div className="data-card flex flex-col">
+    <div className="data-card flex flex-col group">
       <div className="flex items-center gap-2 mb-2">
-        <div className="text-primary">{icon}</div>
+        <div className="text-primary transition-transform duration-300 group-hover:scale-110">{icon}</div>
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
           {label}
         </span>
@@ -92,9 +92,9 @@ const getTempStatus = (temp: number): 'good' | 'moderate' | 'poor' | 'severe' =>
 const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPanelProps) => {
   if (isLoading || !conditions) {
     return (
-      <div className="glass-card p-4">
+      <div className="glass-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold flex items-center gap-2">
+          <h2 className="font-semibold flex items-center gap-2 text-foreground">
             <Gauge className="w-5 h-5 text-primary" />
             Live Conditions
           </h2>
@@ -109,13 +109,15 @@ const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPa
   }
 
   return (
-    <div className="glass-card p-4 fade-in">
+    <div className="glass-card p-5 fade-in">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold flex items-center gap-2">
-          <Gauge className="w-5 h-5 text-primary" />
+        <h2 className="font-semibold flex items-center gap-2 text-foreground">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <Gauge className="w-4 h-4 text-primary-foreground" />
+          </div>
           Live Conditions
         </h2>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
           <Clock className="w-3.5 h-3.5" />
           <span>Updated {format(conditions.lastUpdated, 'HH:mm:ss')}</span>
         </div>
@@ -194,11 +196,9 @@ const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPa
       </div>
       
       {/* Data Source Notice */}
-      <div className="mt-4 pt-3 border-t border-border/30">
+      <div className="mt-4 pt-3 border-t border-border/50">
         <p className="text-xs text-muted-foreground text-center">
           📡 Data sources: Weather API • Air Quality Monitoring • Satellite Imagery
-          <span className="mx-2">|</span>
-          <span className="text-primary">Demo Mode: Using simulated data</span>
         </p>
       </div>
     </div>

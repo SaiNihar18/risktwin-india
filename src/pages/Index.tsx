@@ -98,7 +98,7 @@ const Index = () => {
   }, [demoMode]);
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-hero transition-colors duration-300">
       <Header demoMode={demoMode} onDemoModeChange={setDemoMode} />
       
       <main className="container mx-auto px-4 py-6">
@@ -175,9 +175,9 @@ const Index = () => {
                 <span className="w-2 h-2 rounded-full bg-risk-low animate-pulse" />
                 System Operational
               </span>
-              <span>|</span>
+              <span className="text-border">|</span>
               <span>Last Data Sync: Real-time</span>
-              <span>|</span>
+              <span className="text-border">|</span>
               <span>Version 1.0.0</span>
             </div>
             
