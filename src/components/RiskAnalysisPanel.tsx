@@ -32,13 +32,13 @@ const RiskBar = ({ label, value, weight, description }: RiskBarProps) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 group">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">{label}</span>
+          <span className="font-medium text-sm text-foreground">{label}</span>
           <Tooltip>
             <TooltipTrigger>
-              <Info className="w-3.5 h-3.5 text-muted-foreground" />
+              <Info className="w-3.5 h-3.5 text-muted-foreground transition-colors hover:text-primary" />
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
               <p className="text-xs">{description}</p>
@@ -76,10 +76,10 @@ const SkeletonBar = () => (
 const RiskAnalysisPanel = ({ riskScores, isLoading = false }: RiskAnalysisPanelProps) => {
   if (isLoading || !riskScores) {
     return (
-      <div className="glass-card p-4">
+      <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold">Multi-Risk Analysis</h2>
+          <h2 className="font-semibold text-foreground">Multi-Risk Analysis</h2>
         </div>
         <div className="space-y-5">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -99,19 +99,27 @@ const RiskAnalysisPanel = ({ riskScores, isLoading = false }: RiskAnalysisPanelP
     return 'from-risk-high to-red-400';
   };
 
+  const getOverallBg = () => {
+    if (riskScores.overall < 0.3) return 'from-risk-low/10 to-risk-low/5';
+    if (riskScores.overall < 0.6) return 'from-risk-medium/10 to-risk-medium/5';
+    return 'from-risk-high/10 to-risk-high/5';
+  };
+
   return (
-    <div className="glass-card p-4 fade-in">
+    <div className="glass-card p-5 fade-in">
       <div className="flex items-center gap-2 mb-6">
-        <Activity className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold">Multi-Risk Analysis</h2>
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <Activity className="w-4 h-4 text-primary-foreground" />
+        </div>
+        <h2 className="font-semibold text-foreground">Multi-Risk Analysis</h2>
       </div>
 
       {/* Overall Risk Score - Hero Display */}
-      <div className="bg-gradient-to-br from-secondary/50 to-secondary/30 rounded-xl p-5 mb-6 border border-border/50">
+      <div className={`bg-gradient-to-br ${getOverallBg()} rounded-xl p-5 mb-6 border border-border/50`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
-            <span className="font-medium">Overall Risk Score</span>
+            <span className="font-medium text-foreground">Overall Risk Score</span>
           </div>
           {riskScores.overall > 0.6 && (
             <div className="flex items-center gap-1 text-risk-high animate-pulse">
@@ -146,7 +154,7 @@ const RiskAnalysisPanel = ({ riskScores, isLoading = false }: RiskAnalysisPanelP
         </div>
         
         {/* Risk Formula */}
-        <div className="mt-3 p-2 bg-background/50 rounded-lg">
+        <div className="mt-3 p-2 bg-card/50 rounded-lg border border-border/30">
           <p className="text-xs text-muted-foreground text-center font-mono">
             Overall = 0.40×Disaster + 0.25×AQI + 0.20×Climate + 0.15×Crime
           </p>

@@ -74,7 +74,7 @@ export const INDIAN_CITIES: Location[] = [
   { lat: 21.7645, lon: 72.1519, city: 'Bhavnagar', state: 'Gujarat' },
   { lat: 22.4707, lon: 70.0577, city: 'Rajkot', state: 'Gujarat' },
   { lat: 23.2156, lon: 72.6369, city: 'Gandhinagar', state: 'Gujarat' },
-  { lat: 23.0302, lon: 72.5306, city: 'Ahmedabad', state: 'Gujarat' },
+  { lat: 23.0302, lon: 72.5306, city: 'Anand', state: 'Gujarat' },
   
   // Rajasthan
   { lat: 26.2389, lon: 73.0243, city: 'Jodhpur', state: 'Rajasthan' },
