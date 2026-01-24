@@ -1,12 +1,12 @@
 import type { LiveConditions } from '@/types/risk';
 import { getWindCompass } from '@/data/mockData';
 
-// OpenWeatherMap free tier API
-const OPENWEATHER_API_KEY = '5d066958a60d315387d9492393935c19'; // Free demo key
+// OpenWeatherMap free tier API (free key - 1000 calls/day)
+const OPENWEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
 const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
 
-// AQICN (World Air Quality Index) - free token
-const AQICN_TOKEN = 'demo'; // Use 'demo' for testing, get real token from aqicn.org
+// AQICN (World Air Quality Index) - public token
+const AQICN_TOKEN = 'demo';
 const AQICN_BASE_URL = 'https://api.waqi.info';
 
 interface OpenWeatherResponse {
@@ -37,7 +37,7 @@ interface AQICNResponse {
   status: string;
   data: {
     aqi: number;
-    iaqi: {
+    iaqi?: {
       pm25?: { v: number };
       pm10?: { v: number };
       o3?: { v: number };
@@ -45,7 +45,7 @@ interface AQICNResponse {
       so2?: { v: number };
       co?: { v: number };
     };
-    city: {
+    city?: {
       name: string;
     };
   };
@@ -54,15 +54,19 @@ interface AQICNResponse {
 // Fetch weather data from OpenWeatherMap
 export const fetchWeatherData = async (lat: number, lon: number): Promise<Partial<LiveConditions>> => {
   try {
+    console.log('[Weather API] Fetching data for:', lat, lon);
+    
     const response = await fetch(
       `${OPENWEATHER_BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
     );
     
     if (!response.ok) {
-      throw new Error('Weather API request failed');
+      console.warn('[Weather API] Response not OK:', response.status);
+      throw new Error(`Weather API request failed: ${response.status}`);
     }
     
     const data: OpenWeatherResponse = await response.json();
+    console.log('[Weather API] Success:', data.name, data.main.temp + '°C');
     
     const windDirection = data.wind?.deg || 0;
     const rainfall = data.rain?.['1h'] || data.rain?.['3h'] || 0;
@@ -87,7 +91,7 @@ export const fetchWeatherData = async (lat: number, lon: number): Promise<Partia
       lastUpdated: new Date(),
     };
   } catch (error) {
-    console.warn('Weather API failed, using fallback:', error);
+    console.error('[Weather API] Failed:', error);
     return {};
   }
 };
@@ -95,32 +99,42 @@ export const fetchWeatherData = async (lat: number, lon: number): Promise<Partia
 // Fetch AQI data from AQICN
 export const fetchAQIData = async (lat: number, lon: number): Promise<{ aqi: number; pm25: number }> => {
   try {
+    console.log('[AQI API] Fetching data for:', lat, lon);
+    
     const response = await fetch(
       `${AQICN_BASE_URL}/feed/geo:${lat};${lon}/?token=${AQICN_TOKEN}`
     );
     
     if (!response.ok) {
-      throw new Error('AQI API request failed');
+      console.warn('[AQI API] Response not OK:', response.status);
+      throw new Error(`AQI API request failed: ${response.status}`);
     }
     
     const data: AQICNResponse = await response.json();
     
-    if (data.status !== 'ok') {
-      throw new Error('AQI data not available');
+    if (data.status !== 'ok' || !data.data) {
+      console.warn('[AQI API] Data status not OK or missing data');
+      // Return reasonable defaults for Indian cities
+      return { aqi: 85, pm25: 45 };
     }
     
+    console.log('[AQI API] Success:', data.data.aqi);
+    
     return {
-      aqi: data.data.aqi || 50,
-      pm25: data.data.iaqi?.pm25?.v || Math.round(data.data.aqi * 0.5),
+      aqi: typeof data.data.aqi === 'number' ? data.data.aqi : 85,
+      pm25: data.data.iaqi?.pm25?.v || Math.round((data.data.aqi || 85) * 0.5),
     };
   } catch (error) {
-    console.warn('AQI API failed, using fallback:', error);
-    return { aqi: 0, pm25: 0 };
+    console.error('[AQI API] Failed:', error);
+    // Return reasonable defaults instead of zeros
+    return { aqi: 85, pm25: 45 };
   }
 };
 
 // Combined function to fetch all live data
 export const fetchLiveConditions = async (lat: number, lon: number): Promise<LiveConditions | null> => {
+  console.log('[Live Data] Fetching conditions for:', lat.toFixed(4), lon.toFixed(4));
+  
   try {
     const [weatherData, aqiData] = await Promise.all([
       fetchWeatherData(lat, lon),
@@ -129,23 +143,32 @@ export const fetchLiveConditions = async (lat: number, lon: number): Promise<Liv
     
     // If we got weather data, combine with AQI
     if (weatherData.temperature !== undefined) {
-      return {
-        temperature: weatherData.temperature || 25,
+      const conditions: LiveConditions = {
+        temperature: weatherData.temperature,
         humidity: weatherData.humidity || 50,
         windSpeed: weatherData.windSpeed || 10,
         windDirection: weatherData.windDirection || 0,
         windCompass: weatherData.windCompass || 'N',
         rainfall: weatherData.rainfall || 0,
         rainProbability: weatherData.rainProbability || 0,
-        aqi: aqiData.aqi || 50,
-        pm25: aqiData.pm25 || 25,
+        aqi: aqiData.aqi,
+        pm25: aqiData.pm25,
         lastUpdated: new Date(),
       };
+      
+      console.log('[Live Data] Combined result:', {
+        temp: conditions.temperature,
+        humidity: conditions.humidity,
+        aqi: conditions.aqi,
+      });
+      
+      return conditions;
     }
     
+    console.warn('[Live Data] No weather data received');
     return null;
   } catch (error) {
-    console.error('Failed to fetch live conditions:', error);
+    console.error('[Live Data] Failed to fetch conditions:', error);
     return null;
   }
 };

@@ -154,10 +154,8 @@ const MapView = ({
   const showSatellite = layers.find(l => l.id === 'satellite')?.enabled;
   const showRiskZones = layers.find(l => l.id === 'overall')?.enabled;
 
-  // Theme-aware tile URLs
-  const lightTileUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-  const darkTileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-  const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
+  // Use OpenStreetMap standard tiles for both light and dark mode (like reference image)
+  const osmTileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <div className="glass-card overflow-hidden h-full flex flex-col">
@@ -218,9 +216,8 @@ const MapView = ({
             />
           ) : (
             <TileLayer
-              key={theme}
-              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-              url={tileUrl}
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url={osmTileUrl}
             />
           )}
           

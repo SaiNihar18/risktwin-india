@@ -7,156 +7,149 @@
 
 @layer base {
   :root {
-    /* Light Theme - Clean & Professional */
-    --background: 220 20% 97%;
-    --foreground: 220 16% 12%;
+    /* Light Theme - Clean Government Portal Style */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
-    --card-foreground: 220 16% 12%;
+    --card-foreground: 222 47% 11%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 16% 12%;
+    --popover-foreground: 222 47% 11%;
     
-    /* Primary - Vibrant Amber/Gold */
-    --primary: 38 92% 50%;
+    /* Primary - Professional Blue */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary - Cool Light Gray */
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 220 16% 20%;
+    /* Secondary - Neutral Gray */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
     
-    /* Accent - Electric Teal */
-    --accent: 168 76% 36%;
+    /* Accent - Teal */
+    --accent: 173 80% 40%;
     --accent-foreground: 0 0% 100%;
     
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 14% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
     
-    /* Risk Colors - Refined & Distinct */
-    --risk-low: 152 69% 35%;
-    --risk-medium: 38 92% 45%;
-    --risk-high: 4 90% 50%;
-    --risk-critical: 340 82% 45%;
+    /* Risk Colors */
+    --risk-low: 142 76% 36%;
+    --risk-medium: 38 92% 50%;
+    --risk-high: 0 84% 60%;
+    --risk-critical: 348 83% 47%;
     
     /* Data Visualization */
-    --data-teal: 168 76% 36%;
+    --data-teal: 173 80% 40%;
     --data-amber: 38 92% 50%;
-    --data-rose: 4 90% 50%;
-    --data-violet: 262 83% 50%;
-    --data-emerald: 152 69% 35%;
+    --data-rose: 0 84% 60%;
+    --data-violet: 263 70% 50%;
+    --data-emerald: 142 76% 36%;
     
     /* Alert Colors */
-    --alert-info: 201 96% 40%;
+    --alert-info: 199 89% 48%;
     --alert-warning: 38 92% 50%;
-    --alert-danger: 4 90% 50%;
-    --alert-severe: 340 82% 45%;
+    --alert-danger: 0 84% 60%;
+    --alert-severe: 348 83% 47%;
     
-    --destructive: 4 90% 50%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 14% 85%;
-    --input: 220 14% 90%;
-    --ring: 168 76% 36%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
     
-    --radius: 0.875rem;
+    --radius: 0.75rem;
     
-    /* Glass Effects - Light */
-    --glass-bg: 0 0% 100% / 0.9;
-    --glass-border: 220 14% 80% / 0.5;
+    /* Glass Effects */
+    --glass-bg: 0 0% 100% / 0.95;
+    --glass-border: 214 32% 85% / 0.6;
     
     /* Shadows */
-    --shadow-glow-accent: 0 4px 24px hsl(168 76% 36% / 0.15);
-    --shadow-glow-danger: 0 4px 24px hsl(4 90% 50% / 0.15);
-    --shadow-glow-primary: 0 4px 24px hsl(38 92% 50% / 0.15);
+    --shadow-glow-accent: 0 4px 20px hsl(173 80% 40% / 0.12);
+    --shadow-glow-danger: 0 4px 20px hsl(0 84% 60% / 0.12);
+    --shadow-glow-primary: 0 4px 20px hsl(217 91% 60% / 0.12);
     
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 16% 12%;
-    --sidebar-primary: 38 92% 50%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 95%;
-    --sidebar-accent-foreground: 220 16% 12%;
-    --sidebar-border: 220 14% 85%;
-    --sidebar-ring: 168 76% 36%;
-
-    /* Map tiles */
-    --map-tiles: "light";
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
-    /* Rich Dark Base - Warm Charcoal */
-    --background: 220 16% 7%;
-    --foreground: 60 9% 94%;
+    /* Dark Theme - Sophisticated Slate */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
     
-    /* Card surfaces - Elevated warm grays */
-    --card: 220 16% 10%;
-    --card-foreground: 60 9% 94%;
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
     
-    --popover: 220 16% 12%;
-    --popover-foreground: 60 9% 94%;
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 98%;
     
-    /* Primary - Vibrant Amber/Gold */
-    --primary: 38 92% 50%;
-    --primary-foreground: 220 16% 7%;
+    /* Primary - Vibrant Blue */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
     
-    /* Secondary - Cool Slate */
-    --secondary: 220 14% 15%;
-    --secondary-foreground: 60 9% 94%;
+    /* Secondary - Slate */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
     
-    /* Accent - Electric Teal */
-    --accent: 168 76% 42%;
-    --accent-foreground: 220 16% 7%;
+    /* Accent - Bright Teal */
+    --accent: 173 80% 45%;
+    --accent-foreground: 222 47% 11%;
     
-    --muted: 220 14% 18%;
-    --muted-foreground: 220 14% 55%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
     
-    /* Risk Colors - Refined & Distinct */
-    --risk-low: 152 69% 45%;
-    --risk-medium: 38 92% 50%;
-    --risk-high: 4 90% 58%;
-    --risk-critical: 340 82% 52%;
+    /* Risk Colors */
+    --risk-low: 142 76% 42%;
+    --risk-medium: 38 92% 55%;
+    --risk-high: 0 84% 65%;
+    --risk-critical: 348 83% 55%;
     
-    /* Data Visualization - Harmonious Palette */
-    --data-teal: 168 76% 42%;
-    --data-amber: 38 92% 50%;
-    --data-rose: 4 90% 58%;
-    --data-violet: 262 83% 58%;
-    --data-emerald: 152 69% 45%;
+    /* Data Visualization */
+    --data-teal: 173 80% 45%;
+    --data-amber: 38 92% 55%;
+    --data-rose: 0 84% 65%;
+    --data-violet: 263 70% 60%;
+    --data-emerald: 142 76% 42%;
     
     /* Alert Colors */
-    --alert-info: 201 96% 32%;
-    --alert-warning: 38 92% 50%;
-    --alert-danger: 4 90% 58%;
-    --alert-severe: 340 82% 52%;
+    --alert-info: 199 89% 50%;
+    --alert-warning: 38 92% 55%;
+    --alert-danger: 0 84% 65%;
+    --alert-severe: 348 83% 55%;
     
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 60 9% 94%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 210 40% 98%;
     
-    --border: 220 14% 18%;
-    --input: 220 14% 18%;
-    --ring: 168 76% 42%;
+    --border: 217 33% 22%;
+    --input: 217 33% 22%;
+    --ring: 173 80% 45%;
     
-    --radius: 0.875rem;
+    --radius: 0.75rem;
     
     /* Glass Effects */
-    --glass-bg: 220 16% 10% / 0.85;
-    --glass-border: 220 14% 25% / 0.4;
+    --glass-bg: 222 47% 14% / 0.92;
+    --glass-border: 217 33% 28% / 0.5;
     
     /* Shadows */
-    --shadow-glow-accent: 0 0 40px hsl(168 76% 42% / 0.2);
-    --shadow-glow-danger: 0 0 40px hsl(4 90% 58% / 0.2);
-    --shadow-glow-primary: 0 0 40px hsl(38 92% 50% / 0.2);
+    --shadow-glow-accent: 0 0 30px hsl(173 80% 45% / 0.18);
+    --shadow-glow-danger: 0 0 30px hsl(0 84% 65% / 0.18);
+    --shadow-glow-primary: 0 0 30px hsl(217 91% 60% / 0.18);
     
-    --sidebar-background: 220 16% 7%;
-    --sidebar-foreground: 60 9% 94%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 220 16% 7%;
-    --sidebar-accent: 220 14% 15%;
-    --sidebar-accent-foreground: 60 9% 94%;
-    --sidebar-border: 220 14% 18%;
-    --sidebar-ring: 168 76% 42%;
-
-    /* Map tiles */
-    --map-tiles: "dark";
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 22%;
+    --sidebar-ring: 173 80% 45%;
   }
 }
 
