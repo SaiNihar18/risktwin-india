@@ -1,188 +1,134 @@
 import type { LiveConditions } from '@/types/risk';
 import { getWindCompass } from '@/data/mockData';
 
-// OpenWeatherMap free tier API (free key - 1000 calls/day)
-const OPENWEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
-const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
-
-// We'll use OpenWeatherMap's Air Pollution API for AQI (same account key)
-const OPENWEATHER_AIR_URL = 'https://api.openweathermap.org/data/2.5/air_pollution';
-
-// FWI (Fire Weather Index) forecast endpoint (OpenWeather has an FWI forecast)
-const OPENWEATHER_FWI_URL = 'https://api.openweathermap.org/data/2.5/fwi/forecast';
-
-interface OpenWeatherResponse {
-  main: {
-    temp: number;
-    humidity: number;
-    pressure: number;
-  };
-  wind: {
-    speed: number;
-    deg: number;
-  };
-  weather: Array<{
-    main: string;
-    description: string;
-  }>;
-  rain?: {
-    '1h'?: number;
-    '3h'?: number;
-  };
-  clouds: {
-    all: number;
-  };
-  name: string;
-}
-
-interface AQICNResponse {
-  status: string;
-  data: {
-    aqi: number;
-    iaqi?: {
-      pm25?: { v: number };
-      pm10?: { v: number };
-      o3?: { v: number };
-      no2?: { v: number };
-      so2?: { v: number };
-      co?: { v: number };
-    };
-    city?: {
-      name: string;
-    };
+interface OpenMeteoCurrentWeatherResponse {
+  current?: {
+    temperature_2m?: number;
+    relative_humidity_2m?: number;
+    wind_speed_10m?: number;
+    wind_direction_10m?: number;
+    precipitation?: number;
+    precipitation_probability?: number;
+    time?: string;
   };
 }
 
-// Fetch weather data from OpenWeatherMap
-export const fetchWeatherData = async (lat: number, lon: number): Promise<Partial<LiveConditions>> => {
-  try {
-    console.log('[Weather API] Fetching data for:', lat, lon);
-    
-    const response = await fetch(
-      `${OPENWEATHER_BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
-    );
-    
-    if (!response.ok) {
-      console.warn('[Weather API] Response not OK:', response.status);
-      throw new Error(`Weather API request failed: ${response.status}`);
-    }
-    
-    const data: OpenWeatherResponse = await response.json();
-    console.log('[Weather API] Success:', data.name, data.main.temp + '°C');
-    
-    const windDirection = data.wind?.deg || 0;
-    const rainfall = data.rain?.['1h'] || data.rain?.['3h'] || 0;
-    
-    // Estimate rain probability based on weather conditions and clouds
-    const weatherMain = data.weather?.[0]?.main?.toLowerCase() || '';
-    let rainProbability = data.clouds?.all || 0;
-    if (weatherMain.includes('rain') || weatherMain.includes('drizzle')) {
-      rainProbability = Math.max(rainProbability, 70);
-    } else if (weatherMain.includes('cloud')) {
-      rainProbability = Math.min(rainProbability, 50);
-    }
-    
-    return {
-      temperature: Math.round(data.main.temp * 10) / 10,
-      humidity: data.main.humidity,
-      windSpeed: Math.round(data.wind.speed * 3.6 * 10) / 10, // Convert m/s to km/h
-      windDirection,
-      windCompass: getWindCompass(windDirection),
-      rainfall: Math.round(rainfall * 10) / 10,
-      rainProbability: Math.round(rainProbability),
-      lastUpdated: new Date(),
-    };
-  } catch (error) {
-    console.error('[Weather API] Failed:', error);
-    return {};
+interface OpenMeteoCurrentAirResponse {
+  current?: {
+    us_aqi?: number;
+    pm2_5?: number;
+  };
+}
+
+interface OpenMeteoHistoryWeatherResponse {
+  daily?: {
+    time?: string[];
+    temperature_2m_mean?: number[];
+  };
+}
+
+interface OpenMeteoHistoryAirResponse {
+  daily?: {
+    time?: string[];
+    us_aqi_max?: number[];
+  };
+}
+
+interface HistoryPoint {
+  date: string;
+  temp: number;
+  aqi: number;
+}
+
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
+export const fetchLiveConditions = async (lat: number, lon: number): Promise<LiveConditions | null> => {
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,precipitation_probability`;
+  const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5`;
+
+  const [weatherResp, airResp] = await Promise.all([fetch(weatherUrl), fetch(airUrl)]);
+
+  if (!weatherResp.ok) {
+    throw new Error(`Open-Meteo weather request failed: ${weatherResp.status}`);
   }
+  if (!airResp.ok) {
+    throw new Error(`Open-Meteo air quality request failed: ${airResp.status}`);
+  }
+
+  const weatherData: OpenMeteoCurrentWeatherResponse = await weatherResp.json();
+  const airData: OpenMeteoCurrentAirResponse = await airResp.json();
+
+  const temperature = weatherData.current?.temperature_2m;
+  const humidity = weatherData.current?.relative_humidity_2m;
+  const windSpeed = weatherData.current?.wind_speed_10m;
+  const windDirection = weatherData.current?.wind_direction_10m;
+  const rainfall = weatherData.current?.precipitation ?? 0;
+  const rainProbability = weatherData.current?.precipitation_probability ?? 0;
+  const aqi = airData.current?.us_aqi;
+  const pm25 = airData.current?.pm2_5;
+
+  if (
+    temperature === undefined ||
+    humidity === undefined ||
+    windSpeed === undefined ||
+    windDirection === undefined ||
+    aqi === undefined ||
+    pm25 === undefined
+  ) {
+    throw new Error('Incomplete live weather/air payload from Open-Meteo');
+  }
+
+  return {
+    temperature: round1(temperature),
+    humidity: round1(humidity),
+    windSpeed: round1(windSpeed),
+    windDirection: round1(windDirection),
+    windCompass: getWindCompass(windDirection),
+    rainfall: round1(rainfall),
+    rainProbability: Math.round(rainProbability),
+    aqi: Math.round(aqi),
+    pm25: round1(pm25),
+    lastUpdated: new Date(),
+  };
 };
 
-// Fetch AQI data from AQICN
-// Fetch air pollution from OpenWeatherMap (air_pollution)
-export const fetchAirPollution = async (lat: number, lon: number): Promise<{ aqi: number; pm25: number }> => {
-  try {
-    console.log('[AirPollution] Fetching data for:', lat, lon);
+export const fetchHistoricalTrend = async (lat: number, lon: number, days = 5): Promise<HistoryPoint[]> => {
+  const safeDays = Math.max(2, Math.min(10, days));
+  const weatherHistoryUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean&past_days=${safeDays}&timezone=auto`;
+  const airHistoryUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&daily=us_aqi_max&past_days=${safeDays}&timezone=auto`;
 
-    const resp = await fetch(`${OPENWEATHER_AIR_URL}?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`);
-    if (!resp.ok) {
-      console.warn('[AirPollution] Response not OK:', resp.status);
-      throw new Error(`Air pollution API failed: ${resp.status}`);
-    }
+  const [weatherResp, airResp] = await Promise.all([fetch(weatherHistoryUrl), fetch(airHistoryUrl)]);
 
-    const data = await resp.json();
-    // Expected structure: { coord: [...], list: [ { main: { aqi }, components: { pm2_5 } } ] }
-    const aqi = data?.list?.[0]?.main?.aqi ?? 2;
-    const pm25 = data?.list?.[0]?.components?.pm2_5 ?? Math.round((aqi || 2) * 12);
-
-    return { aqi, pm25 };
-  } catch (error) {
-    console.error('[AirPollution] Failed:', error);
-    return { aqi: 85, pm25: 45 };
-  }
-};
-
-// Fetch FWI (fire weather index) forecast
-export const fetchFWIForecast = async (lat: number, lon: number): Promise<{ fwi?: number; danger?: string }[]> => {
-  try {
-    console.log('[FWI] Fetching FWI forecast for:', lat, lon);
-    const resp = await fetch(`${OPENWEATHER_FWI_URL}?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`);
-    if (!resp.ok) {
-      console.warn('[FWI] Response not OK:', resp.status);
-      throw new Error(`FWI API failed: ${resp.status}`);
-    }
-
-    const data = await resp.json();
-    // Expect 'list' array with 'main.fwi' and optional danger_rating
-    const forecast = (data?.list || []).map((it: any) => ({
-      fwi: it?.main?.fwi,
-      danger: it?.danger_rating?.description || undefined,
-    }));
-
-    return forecast;
-  } catch (error) {
-    console.error('[FWI] Failed:', error);
+  if (!weatherResp.ok || !airResp.ok) {
     return [];
   }
-};
 
-// Combined function to fetch all live data
-export const fetchLiveConditions = async (lat: number, lon: number): Promise<LiveConditions | null> => {
-  console.log('[Live Data] Fetching conditions for:', lat.toFixed(4), lon.toFixed(4));
-  const [weatherData, aqiData, fwiForecast] = await Promise.all([
-    fetchWeatherData(lat, lon),
-    fetchAirPollution(lat, lon),
-    fetchFWIForecast(lat, lon),
-  ]);
+  const weatherData: OpenMeteoHistoryWeatherResponse = await weatherResp.json();
+  const airData: OpenMeteoHistoryAirResponse = await airResp.json();
 
-  // If we got weather data, combine with AQI
-  if (weatherData.temperature !== undefined) {
-    const conditions: LiveConditions = {
-      temperature: weatherData.temperature,
-      humidity: weatherData.humidity || 50,
-      windSpeed: weatherData.windSpeed || 10,
-      windDirection: weatherData.windDirection || 0,
-      windCompass: weatherData.windCompass || 'N',
-      rainfall: weatherData.rainfall || 0,
-      rainProbability: weatherData.rainProbability || 0,
-      aqi: aqiData.aqi,
-      pm25: aqiData.pm25,
-      lastUpdated: new Date(),
-      // Use the first available FWI forecast entry as an indicator
-      wildfireFwi: fwiForecast?.[0]?.fwi,
-      wildfireDanger: fwiForecast?.[0]?.danger,
-    };
+  const dates = weatherData.daily?.time ?? [];
+  const temps = weatherData.daily?.temperature_2m_mean ?? [];
+  const aqiByDate = new Map<string, number>();
 
-    console.log('[Live Data] Combined result:', {
-      temp: conditions.temperature,
-      humidity: conditions.humidity,
-      aqi: conditions.aqi,
-    });
+  (airData.daily?.time ?? []).forEach((date, idx) => {
+    const value = airData.daily?.us_aqi_max?.[idx];
+    if (value !== undefined) {
+      aqiByDate.set(date, Math.round(value));
+    }
+  });
 
-    return conditions;
-  }
+  return dates
+    .map((date, idx) => {
+      const temp = temps[idx];
+      if (temp === undefined) {
+        return null;
+      }
 
-  console.warn('[Live Data] No weather data received');
-  // If upstream APIs returned non-ok they will have thrown - let the caller handle it
-  return null;
+      return {
+        date,
+        temp: round1(temp),
+        aqi: aqiByDate.get(date) ?? 0,
+      };
+    })
+    .filter((row): row is HistoryPoint => row !== null);
 };

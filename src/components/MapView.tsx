@@ -14,7 +14,7 @@ import { INDIAN_CITIES } from '@/data/mockData';
 import { useTheme } from '@/hooks/useTheme';
 
 // Fix for default marker icons in Leaflet with Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -59,13 +59,13 @@ const cityIcon = createCustomIcon('#10B981', 10);
 
 interface MapViewProps {
   selectedLocation: Location | null;
-  onLocationSelect: (lat: number, lon: number) => void;
+  onLocationSelect: (lat: number, lon: number, location?: Location) => void;
   isAnalyzing: boolean;
 }
 
 // Component to handle map clicks
 const MapClickHandler = ({ onLocationSelect, isAnalyzing }: { 
-  onLocationSelect: (lat: number, lon: number) => void;
+  onLocationSelect: (lat: number, lon: number, location?: Location) => void;
   isAnalyzing: boolean;
 }) => {
   useMapEvents({

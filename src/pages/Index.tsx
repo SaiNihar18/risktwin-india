@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from '@/components/ui/sonner';
 import Header from '@/components/Header';
 import MapView from '@/components/MapView';
@@ -10,16 +10,18 @@ import ExplainabilityPanel from '@/components/ExplainabilityPanel';
 import SafePlaceRecommender from '@/components/SafePlaceRecommender';
 import AlertSystem from '@/components/AlertSystem';
 import { 
-  analyzeLocation, 
-  INDIAN_CITIES,
-  generateDisasterRisk,
-  generateRiskScores,
-  generateRiskFactors,
-  generateAlerts,
-  generateSafePlaces,
   findNearestCity,
 } from '@/data/mockData';
-import { fetchLiveConditions } from '@/services/weatherApi';
+import { fetchLiveConditions } from '../services/weatherApi';
+import { fetchHazardSnapshot } from '@/services/hazardApi';
+import {
+  computeAlerts,
+  computeDisasterRisk,
+  computeRiskFactors,
+  computeRiskScores,
+  computeSafePlacesFromNearest,
+} from '@/services/riskEngine';
+import { getCrimeRiskForLocation } from '@/services/crimeDataService';
 import type { AnalysisResult, Location, SafePlace } from '@/types/risk';
 
 const Index = () => {
@@ -28,56 +30,58 @@ const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Handle location selection
-  const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
+  const handleLocationSelect = useCallback(async (lat: number, lon: number, preferredLocation?: Location) => {
     setIsAnalyzing(true);
     
-    // Always use live mode: fetch real API data, fall back to mock if APIs fail
     try {
-      const location = findNearestCity(lat, lon);
+      const nearestLocation = findNearestCity(lat, lon);
+      const location: Location = preferredLocation
+        ? {
+            ...nearestLocation,
+            ...preferredLocation,
+            lat,
+            lon,
+          }
+        : nearestLocation;
+
       setSelectedLocation(location);
 
-      // Fetch real conditions from APIs
-      const liveConditions = await fetchLiveConditions(lat, lon);
+      const [liveConditions, hazardSnapshot, crimeRisk] = await Promise.all([
+        fetchLiveConditions(lat, lon),
+        fetchHazardSnapshot(lat, lon),
+        getCrimeRiskForLocation(location),
+      ]);
 
-      if (liveConditions) {
-        // Use real data to calculate risks
-        const disasterRisk = generateDisasterRisk(location, liveConditions);
-        const riskScores = generateRiskScores(liveConditions, disasterRisk);
-        const riskFactors = generateRiskFactors(liveConditions, disasterRisk, riskScores);
-        const alerts = generateAlerts(liveConditions, riskScores, disasterRisk);
-        const safePlaces = generateSafePlaces(location, riskScores);
-
-        setAnalysisResult({
-          location,
-          conditions: liveConditions,
-          riskScores,
-          disasterRisk,
-          riskFactors,
-          alerts,
-          safePlaces,
-          confidence: riskFactors.length > 3 ? 'high' : riskFactors.length > 1 ? 'medium' : 'low',
-          dataCompleteness: 0.95,
-          analyzedAt: new Date(),
-        });
-      } else {
-        // Fallback to mock if API returns no data
-        const result = analyzeLocation(lat, lon);
-        setSelectedLocation(result.location);
-        setAnalysisResult(result);
+      if (!liveConditions) {
+        throw new Error('Live weather/air feed returned no data');
       }
-    } catch (error: any) {
+
+      const disasterRisk = computeDisasterRisk(location, liveConditions, hazardSnapshot);
+      const riskScores = computeRiskScores(liveConditions, disasterRisk, crimeRisk);
+      const riskFactors = computeRiskFactors(liveConditions, disasterRisk, riskScores, hazardSnapshot);
+      const alerts = computeAlerts(liveConditions, riskScores, disasterRisk, hazardSnapshot);
+      const safePlaces = computeSafePlacesFromNearest(location, riskScores.overall);
+
+      const sourceCount = [hazardSnapshot.sources.gdacs, hazardSnapshot.sources.usgs].filter(Boolean).length;
+      const dataCompleteness = 0.7 + sourceCount * 0.15;
+
+      setAnalysisResult({
+        location,
+        conditions: liveConditions,
+        riskScores,
+        disasterRisk,
+        riskFactors,
+        alerts,
+        safePlaces,
+        confidence: sourceCount === 2 ? 'high' : sourceCount === 1 ? 'medium' : 'low',
+        dataCompleteness,
+        analyzedAt: new Date(),
+      });
+    } catch (error: unknown) {
       console.error('API fetch failed:', error);
-      // Show user-friendly toast if API failed (possible missing key or network)
-      const msg = typeof error?.message === 'string' ? error.message : 'Live API fetch failed';
-      if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-        toast.error('API unauthorized (401). Please provide valid OpenWeather API key.');
-      } else {
-        toast.error('Live data fetch failed. Falling back to demo data.');
-      }
-
-      const result = analyzeLocation(lat, lon);
-      setSelectedLocation(result.location);
-      setAnalysisResult(result);
+      const msg = error instanceof Error ? error.message : 'Live API fetch failed';
+      toast.error(`Live data unavailable: ${msg}`);
+      setAnalysisResult(null);
     }
     
     setIsAnalyzing(false);
@@ -85,7 +89,12 @@ const Index = () => {
 
   // Handle safe place selection
   const handleSafePlaceSelect = useCallback((place: SafePlace) => {
-    handleLocationSelect(place.lat, place.lon);
+    handleLocationSelect(place.lat, place.lon, {
+      lat: place.lat,
+      lon: place.lon,
+      city: place.city,
+      state: place.state,
+    });
   }, [handleLocationSelect]);
 
   return (
@@ -128,6 +137,7 @@ const Index = () => {
             {/* Live Conditions */}
             <LiveConditionsPanel 
               conditions={analysisResult?.conditions || null}
+              location={selectedLocation}
               isLoading={isAnalyzing}
             />
 
@@ -182,7 +192,7 @@ const Index = () => {
               <p className="font-medium text-foreground mb-1">RiskTwin India</p>
               <p>Multi-Risk Digital Twin for Climate, Disaster, Air Quality & Public Safety</p>
               <p className="mt-1 text-muted-foreground/70">
-                Live Mode: Fetching real-time data from OpenWeatherMap & AQICN APIs
+                Live Mode: Open-Meteo + GDACS + USGS (no mock fallback)
               </p>
             </div>
           </div>

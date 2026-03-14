@@ -10,12 +10,37 @@ interface RiskAnalysisPanelProps {
 
 interface RiskBarProps {
   label: string;
-  value: number;
+  value: number | null;
   weight: string;
   description: string;
 }
 
 const RiskBar = ({ label, value, weight, description }: RiskBarProps) => {
+  if (value === null) {
+    return (
+      <div className="space-y-2 group">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm text-foreground">{label}</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-3.5 h-3.5 text-muted-foreground transition-colors hover:text-primary" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-xs">{description}</p>
+                <p className="text-xs text-muted-foreground mt-1">Weight: {weight}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-secondary text-muted-foreground">N/A</span>
+        </div>
+        <div className="risk-progress">
+          <div className="risk-progress-bar bg-secondary" style={{ width: '0%' }} />
+        </div>
+      </div>
+    );
+  }
+
   const level = getRiskLevel(value);
   const percentage = Math.round(value * 100);
   
@@ -156,7 +181,7 @@ const RiskAnalysisPanel = ({ riskScores, isLoading = false }: RiskAnalysisPanelP
         {/* Risk Formula */}
         <div className="mt-3 p-2 bg-card/50 rounded-lg border border-border/30">
           <p className="text-xs text-muted-foreground text-center font-mono">
-            Overall = 0.40×Disaster + 0.25×AQI + 0.20×Climate + 0.15×Crime
+            Overall uses weighted average of available live components.
           </p>
         </div>
       </div>
