@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "data:crime:prepare": "python3 scripts/prepare_crime_dataset.py"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
