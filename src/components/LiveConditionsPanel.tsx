@@ -96,18 +96,16 @@ const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPa
 
   useEffect(() => {
     if (!conditions) return;
-    // Generate a simple previous-5-day sample using current + small offsets.
-    // Ideally you'd fetch historical endpoints — here we synthesize from live data.
-    const now = new Date();
-    const data = Array.from({length:5}).map((_, i) => {
-      const d = new Date(now.getTime() - (4 - i) * 24 * 60 * 60 * 1000);
-      return {
-        date: d.toISOString(),
-        temp: Math.round((conditions.temperature - 2 + i * 1.2) * 10) / 10,
-        aqi: Math.max(10, Math.round(conditions.aqi - 20 + i * 10)),
-      };
-    });
-    setChartData(data);
+    if (conditions.forecast && conditions.forecast.length > 0) {
+      setChartData(conditions.forecast);
+    } else {
+      const now = new Date();
+      setChartData([{
+        date: now.toISOString(),
+        temp: conditions.temperature,
+        aqi: conditions.aqi,
+      }]);
+    }
   }, [conditions]);
 
   if (isLoading || !conditions) {

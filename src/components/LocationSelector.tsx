@@ -20,19 +20,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { INDIAN_CITIES } from '@/data/mockData';
+import { INDIAN_CITIES } from '@/data/locations';
 import type { Location } from '@/types/risk';
+import { cn } from '@/lib/utils';
 
 interface LocationSelectorProps {
   selectedLocation: Location | null;
   onLocationSelect: (lat: number, lon: number) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 const LocationSelector = ({ 
   selectedLocation, 
   onLocationSelect,
-  disabled = false
+  disabled = false,
+  className
 }: LocationSelectorProps) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +58,7 @@ const LocationSelector = ({
   };
 
   return (
-    <div className="glass-card p-4">
+    <div className={cn("glass-card p-4", className)}>
       <div className="flex items-center gap-2 mb-3">
         <MapPin className="w-5 h-5 text-primary" />
         <h2 className="font-semibold">Select Location</h2>
@@ -69,7 +72,7 @@ const LocationSelector = ({
           return (
             <Button
               key={c}
-              variant={selectedLocation?.city === city.city ? 'solid' : 'ghost'}
+              variant={selectedLocation?.city === city.city ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleSelect(city)}
               className="px-3 py-1"

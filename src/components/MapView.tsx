@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, Circle, LayerGroup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, Circle, LayerGroup, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import { Layers, Target, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Location, MapLayer } from '@/types/risk';
-import { INDIAN_CITIES } from '@/data/mockData';
+import { INDIAN_CITIES } from '@/data/locations';
 import { useTheme } from '@/hooks/useTheme';
 
+import { fetchAllIndiaActiveFires } from '@/services/firmsApi';
+import type { ActiveFirePoint } from '@/types/risk';
+
 // Fix for default marker icons in Leaflet with Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -37,6 +40,21 @@ const createCustomIcon = (color: string, size: number = 12) => {
     iconAnchor: [size / 2, size / 2],
   });
 };
+
+const fireIcon = L.divIcon({
+  className: 'fire-marker',
+  html: `<div style="
+    width: 14px; 
+    height: 14px; 
+    background: radial-gradient(circle, #EF4444 30%, #F59E0B 100%); 
+    border-radius: 50%; 
+    border: 2px solid #FFF;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.9), 0 0 6px rgba(245, 158, 11, 0.8);
+    animation: pulse 1.5s infinite;
+  "></div>`,
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
+});
 
 const selectedIcon = L.divIcon({
   className: 'selected-marker',
@@ -61,6 +79,7 @@ interface MapViewProps {
   selectedLocation: Location | null;
   onLocationSelect: (lat: number, lon: number) => void;
   isAnalyzing: boolean;
+  activeFires?: ActiveFirePoint[];
 }
 
 // Component to handle map clicks
@@ -124,18 +143,32 @@ const MapView = ({
   selectedLocation, 
   onLocationSelect, 
   isAnalyzing,
+  activeFires: propActiveFires,
 }: MapViewProps) => {
   const { theme } = useTheme();
   const [layers, setLayers] = useState<MapLayer[]>([
     { id: 'overall', name: 'Risk Zones', enabled: true, type: 'heatmap' },
     { id: 'cities', name: 'Major Cities', enabled: true, type: 'markers' },
+    { id: 'fires', name: 'Active Wildfires (NASA)', enabled: true, type: 'markers' },
     { id: 'satellite', name: 'Satellite View', enabled: false, type: 'zones' },
   ]);
   
+  const [activeFires, setActiveFires] = useState<ActiveFirePoint[]>([]);
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]);
   const [shouldRecenter, setShouldRecenter] = useState(false);
   const prevLocationRef = useRef<Location | null>(null);
   
+  // Load India-wide active fire hotspots from NASA FIRMS
+  useEffect(() => {
+    if (propActiveFires && propActiveFires.length > 0) {
+      setActiveFires(propActiveFires);
+    } else {
+      fetchAllIndiaActiveFires().then(fires => {
+        setActiveFires(fires);
+      });
+    }
+  }, [propActiveFires]);
+
   useEffect(() => {
     if (selectedLocation && prevLocationRef.current?.city !== selectedLocation.city) {
       setShouldRecenter(true);
@@ -151,6 +184,7 @@ const MapView = ({
   };
 
   const showCities = layers.find(l => l.id === 'cities')?.enabled;
+  const showFires = layers.find(l => l.id === 'fires')?.enabled;
   const showSatellite = layers.find(l => l.id === 'satellite')?.enabled;
   const showRiskZones = layers.find(l => l.id === 'overall')?.enabled;
 
@@ -207,7 +241,9 @@ const MapView = ({
           scrollWheelZoom={true}
           className="h-full w-full z-0"
           style={{ background: '#f5f5f5' }}
+          zoomControl={false}
         >
+          <ZoomControl position="topright" />
           {/* Map Tiles - Always use OSM standard (bright) */}
           {showSatellite ? (
             <TileLayer
@@ -260,6 +296,30 @@ const MapView = ({
             );
           })}
           
+          {/* NASA FIRMS Active Wildfire Hotspots */}
+          {showFires && activeFires.map((fire, idx) => (
+            <Marker
+              key={`fire-${fire.lat}-${fire.lon}-${idx}`}
+              position={[fire.lat, fire.lon]}
+              icon={fireIcon}
+            >
+              <Popup className="custom-popup">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-destructive text-sm">
+                    <span>🔥 Active Fire Hotspot</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <p><strong>Sensor:</strong> NASA VIIRS (375m)</p>
+                    <p><strong>FRP (Intensity):</strong> {fire.frp} MW</p>
+                    <p><strong>Brightness Temp:</strong> {fire.brightness} K</p>
+                    <p><strong>Detected:</strong> {fire.acqDate} {fire.acqTime}</p>
+                    <p><strong>Confidence:</strong> {fire.confidence}</p>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
           {/* Selected Location Marker (if not a predefined city) */}
           {selectedLocation && !INDIAN_CITIES.find(c => c.city === selectedLocation.city) && (
             <Marker
@@ -315,6 +375,10 @@ const MapView = ({
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-risk-high shadow-sm" />
               <span className="text-muted-foreground">High Risk</span>
+            </div>
+            <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+              <div className="w-3 h-3 rounded-full bg-destructive shadow-sm animate-pulse" />
+              <span className="text-muted-foreground">Active Fire (NASA)</span>
             </div>
           </div>
         </div>

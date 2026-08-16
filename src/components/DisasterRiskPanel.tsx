@@ -188,7 +188,11 @@ const DisasterRiskPanel = ({ disasterRisk, isLoading = false }: DisasterRiskPane
           icon={<Flame className="w-5 h-5" />}
           label="Wildfire Risk"
           value={disasterRisk.wildfire}
-          description="Fire danger based on temperature, humidity, wind conditions, and vegetation. Dry conditions with high temperatures significantly increase risk."
+          description={
+            disasterRisk.activeFiresNearby && disasterRisk.activeFiresNearby > 0
+              ? `NASA FIRMS satellite detected ${disasterRisk.activeFiresNearby} active thermal fire hotspot(s) in region${disasterRisk.closestFireDistance ? ` (${disasterRisk.closestFireDistance}km away)` : ''}. Blended with Chandler Burning Index based on temperature, humidity, and wind.`
+              : "Fire danger evaluated via Chandler Burning Index (CBI) & NASA FIRMS satellite surveillance based on temperature, humidity, wind velocity, and active thermal anomalies."
+          }
         />
         
         <DisasterCard

@@ -7,6 +7,17 @@ export interface Location {
   district?: string;
 }
 
+// NASA FIRMS Active Fire Hotspot
+export interface ActiveFirePoint {
+  lat: number;
+  lon: number;
+  frp: number; // Fire Radiative Power (MW)
+  brightness: number; // Brightness temperature (Kelvin)
+  confidence: string;
+  acqDate: string;
+  acqTime: string;
+}
+
 // Weather/Live Conditions
 export interface LiveConditions {
   temperature: number;
@@ -22,6 +33,13 @@ export interface LiveConditions {
   // Optional wildfire indices from FWI forecast
   wildfireFwi?: number;
   wildfireDanger?: string;
+  // Live 5-day forecast data from OpenWeather API
+  forecast?: Array<{ date: string; temp: number; aqi: number }>;
+  // NASA FIRMS Live Active Fire Telemetry
+  activeFiresNearby?: number;
+  closestFireDistance?: number;
+  maxFirePower?: number;
+  activeFiresList?: ActiveFirePoint[];
 }
 
 // Risk Scores (0-1)
@@ -41,6 +59,9 @@ export interface DisasterRisk {
   cyclone: number;
   earthquake: number;
   overall: number;
+  // Satellite-backed details
+  activeFiresNearby?: number;
+  closestFireDistance?: number;
 }
 
 // Risk Factor for Explainability

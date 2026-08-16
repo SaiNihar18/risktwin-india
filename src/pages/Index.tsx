@@ -10,15 +10,16 @@ import ExplainabilityPanel from '@/components/ExplainabilityPanel';
 import SafePlaceRecommender from '@/components/SafePlaceRecommender';
 import AlertSystem from '@/components/AlertSystem';
 import { 
-  analyzeLocation, 
   INDIAN_CITIES,
+  findNearestCity,
+} from '@/data/locations';
+import {
   generateDisasterRisk,
   generateRiskScores,
   generateRiskFactors,
   generateAlerts,
   generateSafePlaces,
-  findNearestCity,
-} from '@/data/mockData';
+} from '@/services/riskAnalysis';
 import { fetchLiveConditions } from '@/services/weatherApi';
 import type { AnalysisResult, Location, SafePlace } from '@/types/risk';
 
@@ -26,12 +27,13 @@ const Index = () => {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Handle location selection
   const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
     setIsAnalyzing(true);
+    setApiError(null);
     
-    // Always use live mode: fetch real API data, fall back to mock if APIs fail
     try {
       const location = findNearestCity(lat, lon);
       setSelectedLocation(location);
@@ -42,7 +44,7 @@ const Index = () => {
       if (liveConditions) {
         // Use real data to calculate risks
         const disasterRisk = generateDisasterRisk(location, liveConditions);
-        const riskScores = generateRiskScores(liveConditions, disasterRisk);
+        const riskScores = generateRiskScores(liveConditions, disasterRisk, location);
         const riskFactors = generateRiskFactors(liveConditions, disasterRisk, riskScores);
         const alerts = generateAlerts(liveConditions, riskScores, disasterRisk);
         const safePlaces = generateSafePlaces(location, riskScores);
@@ -60,24 +62,24 @@ const Index = () => {
           analyzedAt: new Date(),
         });
       } else {
-        // Fallback to mock if API returns no data
-        const result = analyzeLocation(lat, lon);
-        setSelectedLocation(result.location);
-        setAnalysisResult(result);
+        const errorText = 'API returned empty weather parameters. Verify OpenWeatherMap API key.';
+        setApiError(errorText);
+        setAnalysisResult(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('API fetch failed:', error);
-      // Show user-friendly toast if API failed (possible missing key or network)
-      const msg = typeof error?.message === 'string' ? error.message : 'Live API fetch failed';
+      const err = error as Error | { message?: string };
+      const msg = typeof err?.message === 'string' ? err.message : 'Live API fetch failed';
+      let errorText = 'Live data fetch failed. Check network connection or API service status.';
+      
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-        toast.error('API unauthorized (401). Please provide valid OpenWeather API key.');
+        errorText = 'API unauthorized (401). Please check that your OpenWeatherMap key is active and correctly configured.';
+        toast.error('API unauthorized (401). Please verify key.');
       } else {
-        toast.error('Live data fetch failed. Falling back to demo data.');
+        toast.error(errorText);
       }
-
-      const result = analyzeLocation(lat, lon);
-      setSelectedLocation(result.location);
-      setAnalysisResult(result);
+      setApiError(errorText);
+      setAnalysisResult(null);
     }
     
     setIsAnalyzing(false);
@@ -93,44 +95,66 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-6">
-        {/* Top: Highlighted Location Selector */}
-        <div className="mb-6">
-          <div className="p-4 rounded-2xl border border-primary/20 shadow-xl bg-gradient-to-r from-primary/6 to-accent/6">
-            <div className="max-w-4xl mx-auto">
-              <LocationSelector
-                selectedLocation={selectedLocation}
-                onLocationSelect={handleLocationSelect}
-                disabled={isAnalyzing}
-              />
-            </div>
+        {/* Sleek Hero Dashboard Title */}
+        <div className="mb-6 space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary border border-primary/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Digital Twin Active Telemetry
           </div>
+          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-muted-foreground/80 to-foreground bg-clip-text text-transparent">
+            Multi-Hazard Climate & Public Safety Surveillance
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-3xl">
+            Surveillance of environmental hazards, seismic activity, air pollution indexes, and public safety parameters across India. Click the map or search to analyze.
+          </p>
         </div>
 
-        {/* Alerts - Always under selector when present */}
+        {apiError && (
+          <div className="mb-6 p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-3 shadow-glow-destructive">
+            <span className="w-2 h-2 mt-1.5 rounded-full bg-destructive animate-pulse" />
+            <div className="space-y-1">
+              <p className="font-semibold text-sm">Live Sync Suspended</p>
+              <p className="text-xs text-muted-foreground">{apiError}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Alerts - Always when present */}
         {analysisResult && analysisResult.alerts.length > 0 && (
           <div className="mb-6">
             <AlertSystem alerts={analysisResult.alerts} />
           </div>
         )}
-
+ 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Map */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Map - large, centered */}
-            <div className="h-[520px] rounded-2xl overflow-hidden border border-border/20 shadow-glow">
+            {/* Map - large, centered, with floating location selector */}
+            <div className="h-[560px] rounded-2xl overflow-hidden border border-border/20 shadow-glow relative">
               <MapView
                 selectedLocation={selectedLocation}
                 onLocationSelect={handleLocationSelect}
                 isAnalyzing={isAnalyzing}
+                activeFires={analysisResult?.conditions.activeFiresList}
               />
+              
+              {/* Floating Location Selector */}
+              <div className="absolute top-4 left-4 z-[400] w-[320px] sm:w-[380px]">
+                <LocationSelector
+                  selectedLocation={selectedLocation}
+                  onLocationSelect={handleLocationSelect}
+                  disabled={isAnalyzing}
+                  className="bg-card/90 backdrop-blur-xl border-border/40 shadow-elevated"
+                />
+              </div>
             </div>
-
+ 
             {/* Live Conditions */}
             <LiveConditionsPanel 
               conditions={analysisResult?.conditions || null}
               isLoading={isAnalyzing}
             />
-
+ 
             {/* Disaster Risk */}
             <DisasterRiskPanel 
               disasterRisk={analysisResult?.disasterRisk || null}
@@ -182,7 +206,7 @@ const Index = () => {
               <p className="font-medium text-foreground mb-1">RiskTwin India</p>
               <p>Multi-Risk Digital Twin for Climate, Disaster, Air Quality & Public Safety</p>
               <p className="mt-1 text-muted-foreground/70">
-                Live Mode: Fetching real-time data from OpenWeatherMap & AQICN APIs
+                Live Mode: Fetching real-time telemetry from OpenWeatherMap & NASA FIRMS VIIRS Satellite APIs
               </p>
             </div>
           </div>
