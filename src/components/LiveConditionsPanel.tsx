@@ -12,9 +12,12 @@ import type { LiveConditions } from '@/types/risk';
 import { format } from 'date-fns';
 import WeatherChart from './WeatherChart';
 import { useEffect, useState } from 'react';
+import { fetchHistoricalTrend } from '@/services/weatherApi';
+import type { Location } from '@/types/risk';
 
 interface LiveConditionsPanelProps {
   conditions: LiveConditions | null;
+  location?: Location | null;
   isLoading?: boolean;
 }
 
@@ -91,22 +94,31 @@ const getTempStatus = (temp: number): 'good' | 'moderate' | 'poor' | 'severe' =>
   return 'severe';
 };
 
-const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPanelProps) => {
+const LiveConditionsPanel = ({ conditions, location, isLoading = false }: LiveConditionsPanelProps) => {
   const [chartData, setChartData] = useState<{date:string; temp:number; aqi:number}[]>([]);
 
   useEffect(() => {
-    if (!conditions) return;
-    if (conditions.forecast && conditions.forecast.length > 0) {
+    if (conditions?.forecast && conditions.forecast.length > 0) {
       setChartData(conditions.forecast);
-    } else {
-      const now = new Date();
-      setChartData([{
-        date: now.toISOString(),
-        temp: conditions.temperature,
-        aqi: conditions.aqi,
-      }]);
+      return;
     }
-  }, [conditions]);
+
+    if (!location) return;
+
+    let cancelled = false;
+    const loadTrend = async () => {
+      const trend = await fetchHistoricalTrend(location.lat, location.lon, 5);
+      if (!cancelled && trend.length > 0) {
+        setChartData(trend);
+      }
+    };
+
+    void loadTrend();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conditions, location]);
 
   if (isLoading || !conditions) {
     return (
@@ -222,7 +234,7 @@ const LiveConditionsPanel = ({ conditions, isLoading = false }: LiveConditionsPa
 
       {/* 5-day Summary Chart */}
       <div className="mt-4">
-        <WeatherChart data={chartData} />
+        {chartData.length > 0 ? <WeatherChart data={chartData} /> : null}
       </div>
     </div>
   );

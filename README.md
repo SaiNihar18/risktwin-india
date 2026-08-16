@@ -1,73 +1,121 @@
-# Welcome to your Lovable project
+# RiskTwin India
 
-## Project info
+RiskTwin India is a React + TypeScript web application for live multi-risk situational awareness.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+The app analyzes a selected location using real-time public feeds for weather, air quality, and disaster alerts. It does not use synthetic test/mock fallback data in runtime analysis.
 
-## How can I edit this code?
+## Live Data Sources
 
-There are several ways of editing your application.
+- Open-Meteo Forecast API (no key): current weather signals
+- Open-Meteo Air Quality API (no key): AQI and PM2.5
+- GDACS API (no key): disaster alerts (flood, cyclone, earthquake, wildfire where available)
+- USGS Earthquake API (no key): regional seismic activity
+- OpenStreetMap Nominatim (optional): reverse geocoding fallback metadata
 
-**Use Lovable**
+## Current Scope
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Live weather and AQI scoring is active.
+- Hazard scoring uses GDACS and USGS.
+- Crime risk is dataset-based via NCRB CSV (no synthetic fallback).
+- Safe-place recommendations are generated from nearest supported areas.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Location Selection Behavior
 
-**Use your preferred IDE**
+- Users can search any place in India using OpenStreetMap Nominatim live search.
+- If an exact supported area is not available in the internal city grid, the app can resolve to the nearest supported area automatically.
+- Map clicks are supported anywhere; analysis uses selected coordinates and nearest supported metadata where required.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Vite
+- React 18
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Leaflet + React-Leaflet
+- Vitest
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Node.js 20+
+- npm 10+
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Install and Run
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+App runs at the local Vite URL shown in terminal (usually http://localhost:5173).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Scripts
 
-**Use GitHub Codespaces**
+```bash
+npm run dev        # start development server
+npm run build      # production build
+npm run preview    # preview production build
+npm run lint       # run eslint
+npm run test       # run vitest once
+npm run test:watch # run vitest in watch mode
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Architecture Notes
 
-## What technologies are used for this project?
+- Location selection supports both predefined Indian cities and live OSM place search.
+- Runtime risk outputs are deterministic from live API payloads.
+- If required feeds are unavailable, the UI shows a live-data error state instead of demo values.
+- Historical chart values are fetched from Open-Meteo historical endpoints.
 
-This project is built with:
+## NCRB Crime Dataset Integration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The app reads state/district crime data from:
 
-## How can I deploy this project?
+- public/data/ncrb_state_crime_rates.csv
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Required CSV columns:
 
-## Can I connect a custom domain to my Lovable project?
+- state
+- district
+- year
+- crime_rate_per_100k
 
-Yes, you can!
+Notes:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Keep official NCRB-derived values only.
+- Do not add synthetic rows.
+- If a state is missing from CSV, crime risk remains unavailable for that location.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Planned Integrations
+
+1. NCRB district-wise crime dataset mapping (data.gov.in) and optional yearly refresh job.
+2. FEMA/INFORM/NDMA overlays for additional hazard context.
+3. Server-side proxy/cache for rate-limit protection and feed normalization.
+
+## Compliance and Attribution
+
+- OpenStreetMap data: attribution to OpenStreetMap contributors where applicable.
+- All API usage should respect provider terms and rate limits.
+
+## Deployment
+
+Build and deploy static assets:
+
+```bash
+npm run build
+```
+
+Then host the generated dist/ directory on your static hosting platform.
+
+### Deploy on Vercel
+
+This repository now includes vercel.json for Vite + SPA routing.
+
+1. Import the repository in Vercel.
+2. Build command: npm run build
+3. Output directory: dist
+4. Deploy.
+
+The rewrite rule routes all paths to index.html so React Router works on refresh and deep links.

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from '@/components/ui/sonner';
 import Header from '@/components/Header';
 import MapView from '@/components/MapView';
@@ -9,18 +9,17 @@ import DisasterRiskPanel from '@/components/DisasterRiskPanel';
 import ExplainabilityPanel from '@/components/ExplainabilityPanel';
 import SafePlaceRecommender from '@/components/SafePlaceRecommender';
 import AlertSystem from '@/components/AlertSystem';
-import { 
-  INDIAN_CITIES,
-  findNearestCity,
-} from '@/data/locations';
-import {
-  generateDisasterRisk,
-  generateRiskScores,
-  generateRiskFactors,
-  generateAlerts,
-  generateSafePlaces,
-} from '@/services/riskAnalysis';
+import { findNearestCity } from '@/data/locations';
 import { fetchLiveConditions } from '@/services/weatherApi';
+import { fetchHazardSnapshot } from '@/services/hazardApi';
+import {
+  computeAlerts,
+  computeDisasterRisk,
+  computeRiskFactors,
+  computeRiskScores,
+  computeSafePlacesFromNearest,
+} from '@/services/riskEngine';
+import { getCrimeRiskForLocation } from '@/services/crimeDataService';
 import type { AnalysisResult, Location, SafePlace } from '@/types/risk';
 
 const Index = () => {
@@ -30,55 +29,59 @@ const Index = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Handle location selection
-  const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
+  const handleLocationSelect = useCallback(async (lat: number, lon: number, preferredLocation?: Location) => {
     setIsAnalyzing(true);
     setApiError(null);
     
     try {
-      const location = findNearestCity(lat, lon);
+      const nearestLocation = findNearestCity(lat, lon);
+      const location: Location = preferredLocation
+        ? {
+            ...nearestLocation,
+            ...preferredLocation,
+            lat,
+            lon,
+          }
+        : nearestLocation;
+
       setSelectedLocation(location);
 
-      // Fetch real conditions from APIs
-      const liveConditions = await fetchLiveConditions(lat, lon);
+      const [liveConditions, hazardSnapshot, crimeRisk] = await Promise.all([
+        fetchLiveConditions(lat, lon),
+        fetchHazardSnapshot(lat, lon),
+        getCrimeRiskForLocation(location),
+      ]);
 
-      if (liveConditions) {
-        // Use real data to calculate risks
-        const disasterRisk = generateDisasterRisk(location, liveConditions);
-        const riskScores = generateRiskScores(liveConditions, disasterRisk, location);
-        const riskFactors = generateRiskFactors(liveConditions, disasterRisk, riskScores);
-        const alerts = generateAlerts(liveConditions, riskScores, disasterRisk);
-        const safePlaces = generateSafePlaces(location, riskScores);
-
-        setAnalysisResult({
-          location,
-          conditions: liveConditions,
-          riskScores,
-          disasterRisk,
-          riskFactors,
-          alerts,
-          safePlaces,
-          confidence: riskFactors.length > 3 ? 'high' : riskFactors.length > 1 ? 'medium' : 'low',
-          dataCompleteness: 0.95,
-          analyzedAt: new Date(),
-        });
-      } else {
-        const errorText = 'API returned empty weather parameters. Verify OpenWeatherMap API key.';
-        setApiError(errorText);
-        setAnalysisResult(null);
+      if (!liveConditions) {
+        throw new Error('Live telemetry feed returned empty data');
       }
+
+      const disasterRisk = computeDisasterRisk(location, liveConditions, hazardSnapshot);
+      const riskScores = computeRiskScores(liveConditions, disasterRisk, crimeRisk);
+      const riskFactors = computeRiskFactors(liveConditions, disasterRisk, riskScores, hazardSnapshot);
+      const alerts = computeAlerts(liveConditions, riskScores, disasterRisk, hazardSnapshot);
+      const safePlaces = computeSafePlacesFromNearest(location, riskScores.overall);
+
+      const sourceCount = [hazardSnapshot.sources.gdacs, hazardSnapshot.sources.usgs].filter(Boolean).length;
+      const dataCompleteness = 0.75 + sourceCount * 0.12;
+
+      setAnalysisResult({
+        location,
+        conditions: liveConditions,
+        riskScores,
+        disasterRisk,
+        riskFactors,
+        alerts,
+        safePlaces,
+        confidence: sourceCount >= 1 && liveConditions.aqi !== undefined ? 'high' : 'medium',
+        dataCompleteness,
+        analyzedAt: new Date(),
+      });
     } catch (error: unknown) {
       console.error('API fetch failed:', error);
-      const err = error as Error | { message?: string };
-      const msg = typeof err?.message === 'string' ? err.message : 'Live API fetch failed';
-      let errorText = 'Live data fetch failed. Check network connection or API service status.';
-      
-      if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-        errorText = 'API unauthorized (401). Please check that your OpenWeatherMap key is active and correctly configured.';
-        toast.error('API unauthorized (401). Please verify key.');
-      } else {
-        toast.error(errorText);
-      }
-      setApiError(errorText);
+      const msg = error instanceof Error ? error.message : 'Live API fetch failed';
+      toast.error(`Live data sync error: ${msg}`);
+      setApiError(msg);
       setAnalysisResult(null);
     }
     
@@ -87,7 +90,12 @@ const Index = () => {
 
   // Handle safe place selection
   const handleSafePlaceSelect = useCallback((place: SafePlace) => {
-    handleLocationSelect(place.lat, place.lon);
+    handleLocationSelect(place.lat, place.lon, {
+      lat: place.lat,
+      lon: place.lon,
+      city: place.city,
+      state: place.state,
+    });
   }, [handleLocationSelect]);
 
   return (
@@ -105,7 +113,7 @@ const Index = () => {
             Multi-Hazard Climate & Public Safety Surveillance
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl">
-            Surveillance of environmental hazards, seismic activity, air pollution indexes, and public safety parameters across India. Click the map or search to analyze.
+            Real-time surveillance of environmental hazards, seismic activity, air pollution indexes, NASA satellite active wildfires, and NCRB public safety metrics across India.
           </p>
         </div>
 
@@ -113,7 +121,7 @@ const Index = () => {
           <div className="mb-6 p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-3 shadow-glow-destructive">
             <span className="w-2 h-2 mt-1.5 rounded-full bg-destructive animate-pulse" />
             <div className="space-y-1">
-              <p className="font-semibold text-sm">Live Sync Suspended</p>
+              <p className="font-semibold text-sm">Live Sync Notice</p>
               <p className="text-xs text-muted-foreground">{apiError}</p>
             </div>
           </div>
@@ -152,6 +160,7 @@ const Index = () => {
             {/* Live Conditions */}
             <LiveConditionsPanel 
               conditions={analysisResult?.conditions || null}
+              location={selectedLocation}
               isLoading={isAnalyzing}
             />
  
@@ -206,7 +215,7 @@ const Index = () => {
               <p className="font-medium text-foreground mb-1">RiskTwin India</p>
               <p>Multi-Risk Digital Twin for Climate, Disaster, Air Quality & Public Safety</p>
               <p className="mt-1 text-muted-foreground/70">
-                Live Mode: Fetching real-time telemetry from OpenWeatherMap & NASA FIRMS VIIRS Satellite APIs
+                Live Mode: OpenWeatherMap • NASA FIRMS VIIRS Satellites • GDACS • USGS • NCRB Baselines
               </p>
             </div>
           </div>

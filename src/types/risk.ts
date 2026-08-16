@@ -46,9 +46,21 @@ export interface LiveConditions {
 export interface RiskScores {
   climate: number;
   aqi: number;
-  crime: number;
+  crime: number | null;
   disaster: number;
   overall: number;
+}
+
+export interface HazardSnapshot {
+  earthquakeScore: number;
+  floodScore: number;
+  cycloneScore: number;
+  wildfireScore: number;
+  totalActiveAlerts: number;
+  sources: {
+    gdacs: boolean;
+    usgs: boolean;
+  };
 }
 
 // Disaster Components

@@ -1,14 +1,11 @@
 import type { LiveConditions } from '@/types/risk';
 import { getWindCompass } from '@/services/riskAnalysis';
+import { getActiveFiresForLocation } from '@/services/firmsApi';
 
-// OpenWeatherMap free tier API (free key - 1000 calls/day)
+// OpenWeatherMap free tier API (1000 calls/day)
 const OPENWEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
 const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
-
-// We'll use OpenWeatherMap's Air Pollution API for AQI (same account key)
 const OPENWEATHER_AIR_URL = 'https://api.openweathermap.org/data/2.5/air_pollution';
-
-// FWI (Fire Weather Index) forecast endpoint (OpenWeather has an FWI forecast)
 const OPENWEATHER_FWI_URL = 'https://api.openweathermap.org/data/2.5/fwi/forecast';
 
 interface OpenWeatherResponse {
@@ -35,23 +32,27 @@ interface OpenWeatherResponse {
   name: string;
 }
 
-interface AQICNResponse {
-  status: string;
-  data: {
-    aqi: number;
-    iaqi?: {
-      pm25?: { v: number };
-      pm10?: { v: number };
-      o3?: { v: number };
-      no2?: { v: number };
-      so2?: { v: number };
-      co?: { v: number };
-    };
-    city?: {
-      name: string;
-    };
+interface OpenMeteoHistoryWeatherResponse {
+  daily?: {
+    time?: string[];
+    temperature_2m_mean?: number[];
   };
 }
+
+interface OpenMeteoHistoryAirResponse {
+  daily?: {
+    time?: string[];
+    us_aqi_max?: number[];
+  };
+}
+
+export interface HistoryPoint {
+  date: string;
+  temp: number;
+  aqi: number;
+}
+
+const round1 = (value: number) => Math.round(value * 10) / 10;
 
 // Fetch weather data from OpenWeatherMap
 export const fetchWeatherData = async (lat: number, lon: number): Promise<Partial<LiveConditions>> => {
@@ -237,7 +238,51 @@ export const fetchFWIForecast = async (lat: number, lon: number): Promise<{ fwi?
   }
 };
 
-import { getActiveFiresForLocation } from '@/services/firmsApi';
+// Fetch historical weather and air trend from Open-Meteo archive
+export const fetchHistoricalTrend = async (lat: number, lon: number, days = 5): Promise<HistoryPoint[]> => {
+  const safeDays = Math.max(2, Math.min(10, days));
+  const weatherHistoryUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean&past_days=${safeDays}&timezone=auto`;
+  const airHistoryUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&daily=us_aqi_max&past_days=${safeDays}&timezone=auto`;
+
+  try {
+    const [weatherResp, airResp] = await Promise.all([fetch(weatherHistoryUrl), fetch(airHistoryUrl)]);
+
+    if (!weatherResp.ok || !airResp.ok) {
+      return [];
+    }
+
+    const weatherData: OpenMeteoHistoryWeatherResponse = await weatherResp.json();
+    const airData: OpenMeteoHistoryAirResponse = await airResp.json();
+
+    const dates = weatherData.daily?.time ?? [];
+    const temps = weatherData.daily?.temperature_2m_mean ?? [];
+    const aqiByDate = new Map<string, number>();
+
+    (airData.daily?.time ?? []).forEach((date, idx) => {
+      const value = airData.daily?.us_aqi_max?.[idx];
+      if (value !== undefined) {
+        aqiByDate.set(date, Math.round(value));
+      }
+    });
+
+    return dates
+      .map((date, idx) => {
+        const temp = temps[idx];
+        if (temp === undefined) {
+          return null;
+        }
+
+        return {
+          date,
+          temp: round1(temp),
+          aqi: aqiByDate.get(date) ?? 0,
+        };
+      })
+      .filter((row): row is HistoryPoint => row !== null);
+  } catch {
+    return [];
+  }
+};
 
 // Combined function to fetch all live data
 export const fetchLiveConditions = async (lat: number, lon: number): Promise<LiveConditions | null> => {
